@@ -31,7 +31,7 @@
             <div class="col-lg-4 mt-4 mt-lg-0">
                 <div class="box" data-aos="zoom-in" data-aos-delay="300">
                     <span>03</span>
-                    <h4>Motherfuckers</h4>
+                    <h4>Motherfuckersz</h4>
                     <p>
                         Molestiae officiis omnis illo asperiores. Aut doloribus vitae
                         sunt debitis quo vel nam quis
