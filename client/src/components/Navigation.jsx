@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, ChevronDown } from 'lucide-react'
+import { Menu, X, ChevronDown, Calendar, Users, Trophy, Camera, BookOpen, Phone, Home, User } from 'lucide-react'
 
 const Navigation = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const [isOpen, setIsOpen] = useState(false)
+  const [eventsDropdownOpen, setEventsDropdownOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [activeSection, setActiveSection] = useState('hero')
 
@@ -16,16 +17,18 @@ const Navigation = () => {
     }
 
     const handleSectionChange = () => {
-      const sections = ['hero', 'about', 'events', 'members', 'gallery', 'contact']
-      const current = sections.find(section => {
-        const element = document.getElementById(section)
-        if (element) {
-          const rect = element.getBoundingClientRect()
-          return rect.top <= 100 && rect.bottom >= 100
-        }
-        return false
-      })
-      if (current) setActiveSection(current)
+      if (location.pathname === '/') {
+        const sections = ['hero', 'about', 'events', 'members', 'gallery', 'contact']
+        const current = sections.find(section => {
+          const element = document.getElementById(section)
+          if (element) {
+            const rect = element.getBoundingClientRect()
+            return rect.top <= 100 && rect.bottom >= 100
+          }
+          return false
+        })
+        if (current) setActiveSection(current)
+      }
     }
 
     window.addEventListener('scroll', handleScroll)
@@ -34,11 +37,10 @@ const Navigation = () => {
       window.removeEventListener('scroll', handleScroll)
       window.removeEventListener('scroll', handleSectionChange)
     }
-  }, [])
+  }, [location.pathname])
 
   const scrollToSection = (sectionId) => {
     if (location.pathname !== '/') {
-      // Navigate to home first, then scroll
       navigate('/')
       setTimeout(() => {
         const element = document.getElementById(sectionId)
@@ -53,150 +55,370 @@ const Navigation = () => {
       }
     }
     setIsOpen(false)
+    setEventsDropdownOpen(false)
   }
 
   const handlePageNavigation = (path) => {
     navigate(path)
     setIsOpen(false)
+    setEventsDropdownOpen(false)
   }
 
   const navLinks = [
-    { id: 'hero', label: 'Home', type: 'section' },
-    { id: 'about', label: 'About', type: 'section' },
-    { id: 'events', label: 'Events', type: 'section' },
-    { id: 'members', label: 'Members', type: 'section' },
-    { id: 'gallery', label: 'Gallery', type: 'section' },
-    { id: 'contact', label: 'Contact', type: 'section' },
-    { id: 'blog', label: 'Blog', type: 'page', path: '/blog' }
+    { id: 'hero', label: 'Home', type: 'section', icon: Home },
+    { id: 'about', label: 'About', type: 'section', icon: User },
+    { id: 'events', label: 'Events', type: 'dropdown', icon: Calendar },
+    { id: 'members', label: 'Members', type: 'section', icon: Users },
+    { id: 'gallery', label: 'Gallery', type: 'section', icon: Camera },
+    { id: 'contact', label: 'Contact', type: 'section', icon: Phone },
+    { id: 'blog', label: 'Blog', type: 'page', path: '/blog', icon: BookOpen }
   ]
+
+  const eventSubItems = [
+    { id: 'academic-events', label: 'Academic Events', icon: Trophy, description: 'Competitions & Awards' },
+    { id: 'cultural-events', label: 'Cultural Events', icon: Users, description: 'Festivals & Shows' },
+    { id: 'sports-events', label: 'Sports Events', icon: Trophy, description: 'Games & Tournaments' },
+    { id: 'workshops', label: 'Workshops', icon: BookOpen, description: 'Skills & Learning' }
+  ]
+
+  const logoVariants = {
+    hover: {
+      scale: 1.05,
+      transition: { duration: 0.2, ease: "easeInOut" }
+    }
+  }
+
+  const linkVariants = {
+    hover: {
+      y: -2,
+      transition: { duration: 0.2, ease: "easeInOut" }
+    }
+  }
+
+  const buttonVariants = {
+    hover: {
+      scale: 1.05,
+      boxShadow: "0 10px 30px rgba(0, 0, 0, 0.2)",
+      transition: { duration: 0.2, ease: "easeInOut" }
+    },
+    tap: {
+      scale: 0.98
+    }
+  }
 
   return (
     <motion.header
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
+      initial={{ y: -100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.6, ease: "easeInOut" }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled 
-          ? 'bg-dark/95 backdrop-blur-md shadow-lg' 
-          : 'bg-dark/60 backdrop-blur-sm'
+          ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-100' 
+          : 'bg-white/90 backdrop-blur-sm'
       }`}
     >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
+          
           {/* Logo */}
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            className="flex-shrink-0"
+            variants={logoVariants}
+            whileHover="hover"
+            className="flex items-center space-x-3"
           >
-            <Link
-              to="/"
-              className="text-white font-heading text-xl md:text-2xl font-bold hover:text-accent transition-colors"
-            >
-              HighSchoolive Africa
+            <Link to="/" className="flex items-center space-x-3 group">
+              <motion.div 
+                className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center"
+                whileHover={{ rotate: 5 }}
+                transition={{ duration: 0.2 }}
+              >
+                <span className="text-white font-bold text-xl">H</span>
+              </motion.div>
+              <div>
+                <motion.h1 
+                  className="text-xl font-bold text-gray-900 leading-tight tracking-tight"
+                  style={{ fontFamily: "'Poppins', sans-serif" }}
+                >
+                  HighSchoolive
+                </motion.h1>
+                <motion.p 
+                  className="text-xs text-blue-600 font-medium tracking-wide uppercase"
+                  style={{ fontFamily: "'Inter', sans-serif" }}
+                >
+                  Africa
+                </motion.p>
+              </div>
             </Link>
           </motion.div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-8">
-            {navLinks.map((link, index) => (
-              <motion.button
-                key={link.id}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 * index }}
-                onClick={() => 
-                  link.type === 'page' 
-                    ? handlePageNavigation(link.path)
-                    : scrollToSection(link.id)
-                }
-                className={`relative text-sm font-medium transition-colors hover:text-accent ${
-                  (link.type === 'page' && location.pathname === link.path) ||
-                  (link.type === 'section' && activeSection === link.id && location.pathname === '/')
-                    ? 'text-accent'
-                    : 'text-white'
-                }`}
-              >
-                {link.label}
-                {((link.type === 'page' && location.pathname === link.path) ||
-                  (link.type === 'section' && activeSection === link.id && location.pathname === '/')) && (
-                  <motion.div
-                    layoutId="activeIndicator"
-                    className="absolute -bottom-1 left-0 right-0 h-0.5 bg-accent"
-                  />
-                )}
-              </motion.button>
-            ))}
+          <nav className="hidden lg:flex items-center space-x-1">
+            {navLinks.map((link, index) => {
+              const Icon = link.icon
+              const isActive = location.pathname === link.path || 
+                            (location.pathname === '/' && activeSection === link.id) ||
+                            (location.pathname.startsWith('/blog') && link.id === 'blog')
+              
+              if (link.type === 'dropdown') {
+                return (
+                  <div key={link.id} className="relative">
+                    <motion.button
+                      variants={linkVariants}
+                      whileHover="hover"
+                      onClick={() => setEventsDropdownOpen(!eventsDropdownOpen)}
+                      className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-medium text-base transition-all duration-200 group ${
+                        isActive 
+                          ? 'text-blue-600 bg-blue-50' 
+                          : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                      }`}
+                      style={{ fontFamily: "'Inter', sans-serif" }}
+                    >
+                      <Icon className={`h-4 w-4 transition-transform duration-200 ${eventsDropdownOpen ? 'rotate-12' : 'group-hover:scale-110'}`} />
+                      <span>{link.label}</span>
+                      <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${eventsDropdownOpen ? 'rotate-180' : ''}`} />
+                    </motion.button>
+
+                    <AnimatePresence>
+                      {eventsDropdownOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          transition={{ duration: 0.2, ease: "easeInOut" }}
+                          className="absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 py-3 z-50"
+                        >
+                          {eventSubItems.map((item, idx) => {
+                            const SubIcon = item.icon
+                            return (
+                              <motion.button
+                                key={item.id}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: idx * 0.05 }}
+                                onClick={() => scrollToSection('events')}
+                                className="w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors group"
+                              >
+                                <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                                  <SubIcon className="h-4 w-4 text-blue-600" />
+                                </div>
+                                <div>
+                                  <p className="font-medium text-gray-900 text-sm">{item.label}</p>
+                                  <p className="text-xs text-gray-500">{item.description}</p>
+                                </div>
+                              </motion.button>
+                            )
+                          })}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )
+              }
+
+              return (
+                <motion.div
+                  key={link.id}
+                  variants={linkVariants}
+                  whileHover="hover"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  {link.type === 'page' ? (
+                    <Link
+                      to={link.path}
+                      className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-medium text-base transition-all duration-200 group ${
+                        isActive 
+                          ? 'text-blue-600 bg-blue-50' 
+                          : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                      }`}
+                      style={{ fontFamily: "'Inter', sans-serif" }}
+                    >
+                      <Icon className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
+                      <span>{link.label}</span>
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={() => scrollToSection(link.id)}
+                      className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-medium text-base transition-all duration-200 group ${
+                        isActive 
+                          ? 'text-blue-600 bg-blue-50' 
+                          : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                      }`}
+                      style={{ fontFamily: "'Inter', sans-serif" }}
+                    >
+                      <Icon className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
+                      <span>{link.label}</span>
+                    </button>
+                  )}
+                </motion.div>
+              )
+            })}
           </nav>
 
-          {/* CTA Button */}
-          <motion.button
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-            onClick={() => scrollToSection('events')}
-            className="hidden lg:block bg-accent hover:bg-accent/90 text-dark font-semibold px-6 py-2 rounded-full transition-all duration-300 hover:scale-105"
-          >
-            Book Event
-          </motion.button>
+          {/* Book Event Button & Mobile Menu */}
+          <div className="flex items-center space-x-4">
+            <motion.button
+              variants={buttonVariants}
+              whileHover="hover"
+              whileTap="tap"
+              onClick={() => scrollToSection('events')}
+              className="hidden lg:flex items-center space-x-2 bg-gray-900 text-white px-6 py-3 rounded-full font-semibold text-base shadow-lg hover:shadow-xl transition-all duration-200"
+              style={{ fontFamily: "'Inter', sans-serif" }}
+            >
+              <Calendar className="h-4 w-4" />
+              <span>Book Event</span>
+            </motion.button>
 
-          {/* Mobile Menu Toggle */}
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="lg:hidden text-white p-2 rounded-md hover:bg-white/10 transition-colors"
-            aria-label="Toggle menu"
-          >
-            {isOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="lg:hidden bg-dark/95 backdrop-blur-md border-t border-white/10"
-          >
-            <div className="container mx-auto px-4 py-6">
-              <nav className="flex flex-col space-y-4">
-                {navLinks.map((link, index) => (
-                  <motion.button
-                    key={link.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.1 * index }}
-                    onClick={() => 
-                      link.type === 'page' 
-                        ? handlePageNavigation(link.path)
-                        : scrollToSection(link.id)
-                    }
-                    className={`text-left py-2 px-4 rounded-md transition-colors ${
-                      (link.type === 'page' && location.pathname === link.path) ||
-                      (link.type === 'section' && activeSection === link.id && location.pathname === '/')
-                        ? 'text-accent bg-accent/10' 
-                        : 'text-white hover:text-accent hover:bg-white/5'
-                    }`}
+            {/* Mobile Menu Button */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsOpen(!isOpen)}
+              className="lg:hidden p-3 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors"
+            >
+              <AnimatePresence mode="wait">
+                {isOpen ? (
+                  <motion.div
+                    key="close"
+                    initial={{ rotate: -90, opacity: 0 }}
+                    animate={{ rotate: 0, opacity: 1 }}
+                    exit={{ rotate: 90, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
                   >
-                    {link.label}
-                  </motion.button>
-                ))}
+                    <X className="h-6 w-6 text-gray-700" />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="menu"
+                    initial={{ rotate: 90, opacity: 0 }}
+                    animate={{ rotate: 0, opacity: 1 }}
+                    exit={{ rotate: -90, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Menu className="h-6 w-6 text-gray-700" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.button>
+          </div>
+        </div>
+
+        {/* Mobile Navigation */}
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="lg:hidden border-t border-gray-100 py-4 overflow-hidden"
+            >
+              <div className="space-y-2">
+                {navLinks.map((link, index) => {
+                  const Icon = link.icon
+                  const isActive = location.pathname === link.path || 
+                                (location.pathname === '/' && activeSection === link.id) ||
+                                (location.pathname.startsWith('/blog') && link.id === 'blog')
+
+                  if (link.type === 'dropdown') {
+                    return (
+                      <div key={link.id} className="space-y-2">
+                        <motion.button
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          onClick={() => setEventsDropdownOpen(!eventsDropdownOpen)}
+                          className="w-full flex items-center justify-between p-3 rounded-xl text-left font-medium transition-colors hover:bg-gray-50"
+                        >
+                          <div className="flex items-center space-x-3">
+                            <Icon className="h-5 w-5 text-gray-600" />
+                            <span className="text-gray-900">{link.label}</span>
+                          </div>
+                          <ChevronDown className={`h-4 w-4 text-gray-600 transition-transform duration-200 ${eventsDropdownOpen ? 'rotate-180' : ''}`} />
+                        </motion.button>
+                        
+                        <AnimatePresence>
+                          {eventsDropdownOpen && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="ml-4 space-y-1 overflow-hidden"
+                            >
+                              {eventSubItems.map((item, idx) => {
+                                const SubIcon = item.icon
+                                return (
+                                  <motion.button
+                                    key={item.id}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: idx * 0.05 }}
+                                    onClick={() => scrollToSection('events')}
+                                    className="w-full flex items-center space-x-3 p-3 rounded-lg text-left hover:bg-gray-50 transition-colors"
+                                  >
+                                    <SubIcon className="h-4 w-4 text-blue-600" />
+                                    <div>
+                                      <p className="font-medium text-gray-900 text-sm">{item.label}</p>
+                                      <p className="text-xs text-gray-500">{item.description}</p>
+                                    </div>
+                                  </motion.button>
+                                )
+                              })}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <motion.div
+                      key={link.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                    >
+                      {link.type === 'page' ? (
+                        <Link
+                          to={link.path}
+                          className={`flex items-center space-x-3 p-3 rounded-xl font-medium transition-colors ${
+                            isActive ? 'bg-blue-50 text-blue-600' : 'text-gray-900 hover:bg-gray-50'
+                          }`}
+                        >
+                          <Icon className="h-5 w-5" />
+                          <span>{link.label}</span>
+                        </Link>
+                      ) : (
+                        <button
+                          onClick={() => scrollToSection(link.id)}
+                          className={`w-full flex items-center space-x-3 p-3 rounded-xl font-medium text-left transition-colors ${
+                            isActive ? 'bg-blue-50 text-blue-600' : 'text-gray-900 hover:bg-gray-50'
+                          }`}
+                        >
+                          <Icon className="h-5 w-5" />
+                          <span>{link.label}</span>
+                        </button>
+                      )}
+                    </motion.div>
+                  )
+                })}
+                
                 <motion.button
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6 }}
+                  transition={{ delay: navLinks.length * 0.05 }}
                   onClick={() => scrollToSection('events')}
-                  className="mt-4 bg-accent hover:bg-accent/90 text-dark font-semibold py-3 px-6 rounded-full transition-all duration-300"
+                  className="w-full flex items-center justify-center space-x-2 bg-gray-900 text-white p-4 rounded-xl font-semibold mt-4"
                 >
-                  Book Event
+                  <Calendar className="h-5 w-5" />
+                  <span>Book Event</span>
                 </motion.button>
-              </nav>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </motion.header>
   )
 }

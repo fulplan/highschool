@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Calendar, Clock, User, Tag, TrendingUp, BookOpen, Users } from 'lucide-react'
+import { Search, Calendar, Clock, User, Tag, TrendingUp, BookOpen, Users, Sparkles, Zap, Fire, Star, Heart, MessageCircle, Share2 } from 'lucide-react'
 import BlogCard from './BlogCard'
 import { blogPosts, getFeaturedPosts, getTrendingPosts } from '../data/blogData'
 
@@ -36,37 +36,166 @@ const Blog = () => {
   return (
     <section id="blog" className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="container mx-auto px-4 py-16">
+      <div className="bg-gradient-to-br from-white via-blue-50/50 to-purple-50/50 border-b border-gray-200 relative overflow-hidden">
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0">
+          {[...Array(6)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-4 h-4 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full opacity-20"
+              animate={{
+                x: [0, 100, 0],
+                y: [0, -50, 0],
+                rotate: 360
+              }}
+              transition={{
+                duration: 10 + i * 2,
+                repeat: Infinity,
+                ease: "linear"
+              }}
+              style={{
+                left: `${10 + i * 15}%`,
+                top: `${20 + i * 10}%`
+              }}
+            />
+          ))}
+        </div>
+
+        <div className="container mx-auto px-4 py-20 relative z-10">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center max-w-4xl mx-auto"
+            transition={{ duration: 0.8, type: "spring", stiffness: 100 }}
+            className="text-center max-w-5xl mx-auto"
           >
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-              HighSchool<span className="text-accent">ive</span> Blog
-            </h1>
-            <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-              Insights, tips, and stories to help African high school students thrive academically, 
-              socially, and personally on their journey to success.
-            </p>
+            {/* Dynamic Title with Emojis */}
+            <motion.div
+              className="flex items-center justify-center space-x-3 mb-6"
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              <motion.span
+                className="text-4xl"
+                animate={{ rotate: [0, -10, 10, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              >
+                ✨
+              </motion.span>
+              <h1 className="text-5xl md:text-7xl font-bold text-gray-900">
+                <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  HighSchoolive
+                </span>{" "}
+                <span className="text-gray-700">Blog</span>
+              </h1>
+              <motion.span
+                className="text-4xl"
+                animate={{ rotate: [0, 10, -10, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+              >
+                🚀
+              </motion.span>
+            </motion.div>
+
+            <motion.p 
+              className="text-xl md:text-2xl text-gray-600 mb-8 leading-relaxed"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              Where African high schoolers discover{" "}
+              <span className="font-bold text-blue-600">epic content</span>,{" "}
+              <span className="font-bold text-purple-600">share vibes</span>, and{" "}
+              <span className="font-bold text-pink-600">level up</span> their journey! 💯
+            </motion.p>
+
+            {/* Stats */}
+            <motion.div
+              className="flex items-center justify-center space-x-8 mb-10"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              <div className="text-center">
+                <motion.div 
+                  className="text-2xl font-bold text-blue-600"
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  50K+
+                </motion.div>
+                <div className="text-sm text-gray-600">Readers</div>
+              </div>
+              <div className="text-center">
+                <motion.div 
+                  className="text-2xl font-bold text-purple-600"
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                >
+                  200+
+                </motion.div>
+                <div className="text-sm text-gray-600">Articles</div>
+              </div>
+              <div className="text-center">
+                <motion.div 
+                  className="text-2xl font-bold text-pink-600"
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+                >
+                  15K+
+                </motion.div>
+                <div className="text-sm text-gray-600">Likes</div>
+              </div>
+            </motion.div>
             
-            {/* Search Bar */}
+            {/* Enhanced Search Bar */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="relative max-w-md mx-auto"
+              transition={{ duration: 0.6, delay: 0.8 }}
+              className="relative max-w-lg mx-auto"
             >
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <input
-                type="text"
-                placeholder="Search articles..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 bg-gray-100 rounded-full text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-accent focus:bg-white transition-all duration-300"
-              />
+              <div className="relative">
+                <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                <input
+                  type="text"
+                  placeholder="Search for amazing content... 🔍"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-14 pr-6 py-5 bg-white/80 backdrop-blur-sm rounded-2xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:bg-white border-2 border-transparent hover:border-blue-200 transition-all duration-300 text-lg shadow-lg"
+                />
+                <motion.div
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                >
+                  <Sparkles className="h-5 w-5 text-blue-500" />
+                </motion.div>
+              </div>
+            </motion.div>
+
+            {/* Trending Hashtags */}
+            <motion.div
+              className="mt-8 flex flex-wrap items-center justify-center gap-3"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1 }}
+            >
+              <span className="text-gray-500 font-medium">Trending:</span>
+              {['#StudyTips', '#GenZLife', '#CareerGoals', '#WellnessVibes', '#TechSkills'].map((tag, index) => (
+                <motion.button
+                  key={tag}
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full text-sm font-medium hover:shadow-lg transition-all duration-200"
+                  onClick={() => setSearchQuery(tag.slice(1))}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 1.2 + index * 0.1 }}
+                >
+                  {tag}
+                </motion.button>
+              ))}
             </motion.div>
           </motion.div>
         </div>
