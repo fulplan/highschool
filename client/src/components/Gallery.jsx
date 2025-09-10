@@ -83,7 +83,6 @@ const Gallery = () => {
 
       // Handle navigation keys
       if (e.key === 'Escape') {
-        e.preventDefault()
         closeLightbox()
         return
       }
@@ -100,7 +99,7 @@ const Gallery = () => {
         return
       }
 
-      // Handle Tab for focus trap
+      // Focus trap - handle Tab navigation within modal
       if (e.key === 'Tab') {
         const focusableElements = getFocusableElements()
         if (focusableElements.length === 0) return
@@ -109,7 +108,7 @@ const Gallery = () => {
         const lastElement = focusableElements[focusableElements.length - 1]
 
         if (e.shiftKey) {
-          // Shift + Tab (backwards)
+          // Shift+Tab (backwards)
           if (document.activeElement === firstElement) {
             e.preventDefault()
             lastElement.focus()
@@ -161,6 +160,15 @@ const Gallery = () => {
     <section id="gallery" className="py-20 bg-gradient-to-br from-dark via-dark-lighter to-dark">
       <div className="container mx-auto px-4">
         
+        {/* ARIA Live Region for Screen Reader Announcements */}
+        <div
+          aria-live="polite"
+          aria-atomic="true"
+          className="sr-only"
+        >
+          {announcement}
+        </div>
+        
         {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -202,8 +210,10 @@ const Gallery = () => {
         </motion.div>
 
         {/* Gallery Grid */}
-        <motion.div 
-          layout
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
         >
           <AnimatePresence>
@@ -235,7 +245,7 @@ const Gallery = () => {
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
-                        onClick={(e) => openLightbox(image, images.findIndex(img => img.src === image.src), e.target)}
+                        onClick={(e) => openLightbox(image, index, e.currentTarget)}
                         className="p-2 bg-accent/20 backdrop-blur-sm rounded-full text-accent hover:bg-accent hover:text-dark transition-colors focus:outline-none focus:ring-2 focus:ring-accent"
                         aria-label={`View ${image.title} in fullscreen`}
                       >
@@ -244,14 +254,16 @@ const Gallery = () => {
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
-                        className="p-2 bg-accent/20 backdrop-blur-sm rounded-full text-accent hover:bg-accent hover:text-dark transition-colors"
+                        className="p-2 bg-accent/20 backdrop-blur-sm rounded-full text-accent hover:bg-accent hover:text-dark transition-colors focus:outline-none focus:ring-2 focus:ring-accent"
+                        aria-label={`Like ${image.title}`}
                       >
                         <Heart className="h-4 w-4" />
                       </motion.button>
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
-                        className="p-2 bg-accent/20 backdrop-blur-sm rounded-full text-accent hover:bg-accent hover:text-dark transition-colors"
+                        className="p-2 bg-accent/20 backdrop-blur-sm rounded-full text-accent hover:bg-accent hover:text-dark transition-colors focus:outline-none focus:ring-2 focus:ring-accent"
+                        aria-label={`Share ${image.title}`}
                       >
                         <Share2 className="h-4 w-4" />
                       </motion.button>
@@ -261,22 +273,6 @@ const Gallery = () => {
               </motion.div>
             ))}
           </AnimatePresence>
-        </motion.div>
-
-        {/* View More Button */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="text-center mt-12"
-        >
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="bg-accent/10 hover:bg-accent hover:text-dark text-accent font-semibold px-8 py-3 rounded-full border-2 border-accent transition-all duration-300"
-          >
-            Load More Photos
-          </motion.button>
         </motion.div>
       </div>
 
@@ -324,12 +320,12 @@ const Gallery = () => {
               <button
                 ref={nextButtonRef}
                 onClick={() => navigateToImage('next')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-dark/50 backdrop-blur-sm rounded-full text-white hover:bg-dark/70 transition-colors focus:outline-none focus:ring-2 focus:ring-accent"
+                className="absolute right-16 top-1/2 -translate-y-1/2 p-3 bg-dark/50 backdrop-blur-sm rounded-full text-white hover:bg-dark/70 transition-colors focus:outline-none focus:ring-2 focus:ring-accent"
                 aria-label="Next image"
               >
                 <ChevronRight className="h-6 w-6" />
               </button>
-
+              
               <button
                 ref={closeButtonRef}
                 onClick={closeLightbox}
@@ -344,22 +340,13 @@ const Gallery = () => {
                   {selectedImage.title}
                 </h3>
                 <p id="lightbox-description" className="text-gray-300 text-sm mt-1">
-                  Image {images.findIndex(img => img.src === selectedImage.src) + 1} of {images.length}. Use arrow keys to navigate, Escape to close.
+                  Image {selectedImageIndex + 1} of {images.length}. Use arrow keys to navigate, Escape to close.
                 </p>
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-      
-      {/* ARIA Live Region for Screen Reader Announcements */}
-      <div
-        aria-live="polite"
-        aria-atomic="true"
-        className="sr-only"
-      >
-        {announcement}
-      </div>
     </section>
   )
 }
