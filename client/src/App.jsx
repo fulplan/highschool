@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrowserRouter as Router } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Navigation from './components/Navigation'
 import Hero from './components/Hero'
 import About from './components/About'
@@ -9,23 +9,36 @@ import Members from './components/Members'
 import Gallery from './components/Gallery'
 import Contact from './components/Contact'
 import Footer from './components/Footer'
+import Blog from './components/Blog'
+import BlogPost from './components/BlogPost'
 import { Toaster } from 'sonner'
+
+// Home page component
+const HomePage = () => (
+  <>
+    <Hero />
+    <main>
+      <About />
+      <WhyUs />
+      <Events />
+      <Members />
+      <Gallery />
+      <Contact />
+    </main>
+    <Footer />
+  </>
+)
 
 function App() {
   return (
     <Router>
       <div className="App min-h-screen bg-dark text-white">
         <Navigation />
-        <Hero />
-        <main>
-          <About />
-          <WhyUs />
-          <Events />
-          <Members />
-          <Gallery />
-          <Contact />
-        </main>
-        <Footer />
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:id" element={<BlogPost />} />
+        </Routes>
         <Toaster position="top-right" />
       </div>
     </Router>

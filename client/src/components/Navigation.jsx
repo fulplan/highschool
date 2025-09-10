@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, ChevronDown } from 'lucide-react'
 
 const Navigation = () => {
+  const navigate = useNavigate()
+  const location = useLocation()
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [activeSection, setActiveSection] = useState('hero')
@@ -34,20 +37,37 @@ const Navigation = () => {
   }, [])
 
   const scrollToSection = (sectionId) => {
-    const element = document.getElementById(sectionId)
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' })
-      setIsOpen(false)
+    if (location.pathname !== '/') {
+      // Navigate to home first, then scroll
+      navigate('/')
+      setTimeout(() => {
+        const element = document.getElementById(sectionId)
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' })
+        }
+      }, 100)
+    } else {
+      const element = document.getElementById(sectionId)
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' })
+      }
     }
+    setIsOpen(false)
+  }
+
+  const handlePageNavigation = (path) => {
+    navigate(path)
+    setIsOpen(false)
   }
 
   const navLinks = [
-    { id: 'hero', label: 'Home' },
-    { id: 'about', label: 'About' },
-    { id: 'events', label: 'Events' },
-    { id: 'members', label: 'Members' },
-    { id: 'gallery', label: 'Gallery' },
-    { id: 'contact', label: 'Contact' }
+    { id: 'hero', label: 'Home', type: 'section' },
+    { id: 'about', label: 'About', type: 'section' },
+    { id: 'events', label: 'Events', type: 'section' },
+    { id: 'members', label: 'Members', type: 'section' },
+    { id: 'gallery', label: 'Gallery', type: 'section' },
+    { id: 'contact', label: 'Contact', type: 'section' },
+    { id: 'blog', label: 'Blog', type: 'page', path: '/blog' }
   ]
 
   return (
@@ -69,12 +89,12 @@ const Navigation = () => {
             transition={{ delay: 0.2 }}
             className="flex-shrink-0"
           >
-            <button
-              onClick={() => scrollToSection('hero')}
+            <Link
+              to="/"
               className="text-white font-heading text-xl md:text-2xl font-bold hover:text-accent transition-colors"
             >
               HighSchoolive Africa
-            </button>
+            </Link>
           </motion.div>
 
           {/* Desktop Navigation */}
@@ -85,13 +105,21 @@ const Navigation = () => {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 * index }}
-                onClick={() => scrollToSection(link.id)}
+                onClick={() => 
+                  link.type === 'page' 
+                    ? handlePageNavigation(link.path)
+                    : scrollToSection(link.id)
+                }
                 className={`relative text-sm font-medium transition-colors hover:text-accent ${
-                  activeSection === link.id ? 'text-accent' : 'text-white'
+                  (link.type === 'page' && location.pathname === link.path) ||
+                  (link.type === 'section' && activeSection === link.id && location.pathname === '/')
+                    ? 'text-accent'
+                    : 'text-white'
                 }`}
               >
                 {link.label}
-                {activeSection === link.id && (
+                {((link.type === 'page' && location.pathname === link.path) ||
+                  (link.type === 'section' && activeSection === link.id && location.pathname === '/')) && (
                   <motion.div
                     layoutId="activeIndicator"
                     className="absolute -bottom-1 left-0 right-0 h-0.5 bg-accent"
@@ -140,9 +168,14 @@ const Navigation = () => {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.1 * index }}
-                    onClick={() => scrollToSection(link.id)}
+                    onClick={() => 
+                      link.type === 'page' 
+                        ? handlePageNavigation(link.path)
+                        : scrollToSection(link.id)
+                    }
                     className={`text-left py-2 px-4 rounded-md transition-colors ${
-                      activeSection === link.id 
+                      (link.type === 'page' && location.pathname === link.path) ||
+                      (link.type === 'section' && activeSection === link.id && location.pathname === '/')
                         ? 'text-accent bg-accent/10' 
                         : 'text-white hover:text-accent hover:bg-white/5'
                     }`}
