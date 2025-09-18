@@ -4,10 +4,14 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const bodyParser = require('body-parser');
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
 
 const PORT = process.env.PORT || 5000;
-const DB_FILE = process.env.DB_FILE || 'orders.db';
+
+// PostgreSQL configuration
+const DATABASE_URL = process.env.DATABASE_URL || 
+  process.env.PGURL || 
+  `postgresql://${process.env.PGUSER || 'postgres'}:${process.env.PGPASSWORD || 'postgres'}@${process.env.PGHOST || 'localhost'}:${process.env.PGPORT || 5432}/${process.env.PGDATABASE || 'shawarma_boss'}`;
 
 const app = express();
 
@@ -25,96 +29,129 @@ app.use(express.static(path.join(__dirname, 'dist')));
 // Serve legacy static files (icons, manifest, etc.)
 app.use(express.static(path.join(__dirname)));
 
-// Database setup
-const dbPath = path.join(__dirname, DB_FILE);
-const db = new sqlite3.Database(dbPath);
+// PostgreSQL Database setup
+const pool = new Pool({
+  connectionString: DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+});
 
-db.serialize(() => {
-  // Create tables if they don't exist
-  db.run(`CREATE TABLE IF NOT EXISTS users (
-    username TEXT PRIMARY KEY,
-    password TEXT,
-    role TEXT,
-    meta TEXT
-  )`);
+// Initialize database tables and default data
+async function initializeDatabase() {
+  try {
+    // Create tables if they don't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        username VARCHAR(50) PRIMARY KEY,
+        password VARCHAR(255) NOT NULL,
+        role VARCHAR(20) DEFAULT 'staff',
+        meta JSONB,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
 
-  db.run(`CREATE TABLE IF NOT EXISTS menu (
-    id TEXT PRIMARY KEY,
-    name TEXT,
-    price REAL,
-    stock INTEGER,
-    meta TEXT
-  )`);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS menu (
+        id VARCHAR(50) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        price DECIMAL(10,2) NOT NULL DEFAULT 0,
+        stock INTEGER NOT NULL DEFAULT 0,
+        meta JSONB,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
 
-  db.run(`CREATE TABLE IF NOT EXISTS orders (
-    id TEXT PRIMARY KEY,
-    staff TEXT,
-    timestamp TEXT,
-    total REAL,
-    payload TEXT,
-    serverReceivedAt TEXT
-  )`);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS orders (
+        id VARCHAR(50) PRIMARY KEY,
+        staff VARCHAR(50),
+        timestamp TIMESTAMP DEFAULT NOW(),
+        total DECIMAL(10,2) NOT NULL DEFAULT 0,
+        payload JSONB,
+        server_received_at TIMESTAMP DEFAULT NOW(),
+        FOREIGN KEY (staff) REFERENCES users(username)
+      )
+    `);
 
-  // Insert default data if tables are empty
-  db.get("SELECT COUNT(*) as count FROM users", (err, row) => {
-    if (row && row.count === 0) {
+    // Create indexes for better performance
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_orders_staff ON orders(staff)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_orders_timestamp ON orders(timestamp)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_menu_stock ON menu(stock)`);
+
+    // Insert default data if tables are empty
+    const userCount = await pool.query('SELECT COUNT(*) as count FROM users');
+    if (parseInt(userCount.rows[0].count) === 0) {
       const defaultUsers = [
         { username: 'admin', password: 'admin123', role: 'admin' },
         { username: 'staff1', password: 'staff123', role: 'staff' }
       ];
-      defaultUsers.forEach(user => {
-        db.run('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', 
-               [user.username, user.password, user.role]);
-      });
+      
+      for (const user of defaultUsers) {
+        await pool.query(
+          'INSERT INTO users (username, password, role) VALUES ($1, $2, $3)',
+          [user.username, user.password, user.role]
+        );
+      }
+      console.log('✅ Default users created');
     }
-  });
 
-  db.get("SELECT COUNT(*) as count FROM menu", (err, row) => {
-    if (row && row.count === 0) {
+    const menuCount = await pool.query('SELECT COUNT(*) as count FROM menu');
+    if (parseInt(menuCount.rows[0].count) === 0) {
       const defaultMenu = [
         { id: 'm-1', name: 'Shawarma Wrap', price: 20, stock: 25 },
         { id: 'm-2', name: 'Chicken Shawarma', price: 25, stock: 20 },
         { id: 'm-3', name: 'Beef Shawarma', price: 28, stock: 18 }
       ];
-      defaultMenu.forEach(item => {
-        db.run('INSERT INTO menu (id, name, price, stock) VALUES (?, ?, ?, ?)', 
-               [item.id, item.name, item.price, item.stock]);
-      });
+      
+      for (const item of defaultMenu) {
+        await pool.query(
+          'INSERT INTO menu (id, name, price, stock) VALUES ($1, $2, $3, $4)',
+          [item.id, item.name, item.price, item.stock]
+        );
+      }
+      console.log('✅ Default menu items created');
     }
-  });
-});
 
-// Helper functions for async database operations
-function runAsync(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    db.run(sql, params, function(err) {
-      if (err) return reject(err);
-      resolve(this);
-    });
-  });
+    console.log('🗄️ PostgreSQL database initialized successfully');
+  } catch (error) {
+    console.error('❌ Database initialization error:', error);
+    throw error;
+  }
 }
 
-function allAsync(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    db.all(sql, params, (err, rows) => {
-      if (err) return reject(err);
-      resolve(rows);
-    });
-  });
-}
+// Initialize database on startup
+initializeDatabase();
 
-function getAsync(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    db.get(sql, params, (err, row) => {
-      if (err) return reject(err);
-      resolve(row);
-    });
-  });
+// Helper function for database queries
+async function queryDB(sql, params = []) {
+  try {
+    const result = await pool.query(sql, params);
+    return result.rows;
+  } catch (error) {
+    console.error('Database query error:', error);
+    throw error;
+  }
 }
 
 // API Routes
-app.get('/api/health', (req, res) => {
-  res.json({ ok: true, message: 'Shawarma Boss MERN Server Running', db: DB_FILE });
+app.get('/api/health', async (req, res) => {
+  try {
+    // Test database connection
+    await pool.query('SELECT NOW()');
+    res.json({ 
+      ok: true, 
+      message: 'Shawarma Boss MERN Server Running', 
+      database: 'PostgreSQL',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      ok: false, 
+      message: 'Database connection failed', 
+      error: error.message 
+    });
+  }
 });
 
 // Login endpoint
@@ -125,8 +162,9 @@ app.post('/api/login', async (req, res) => {
       return res.status(400).json({ ok: false, error: 'Username and password required' });
     }
     
-    const user = await getAsync('SELECT username, role FROM users WHERE username = ? AND password = ?', 
+    const users = await queryDB('SELECT username, role FROM users WHERE username = $1 AND password = $2', 
                                 [username, password]);
+    const user = users[0];
     if (!user) {
       return res.status(401).json({ ok: false, error: 'Invalid credentials' });
     }
@@ -141,11 +179,11 @@ app.post('/api/login', async (req, res) => {
 // Get staff/users
 app.get('/api/staff', async (req, res) => {
   try {
-    const users = await allAsync('SELECT username, role, meta FROM users');
+    const users = await queryDB('SELECT username, role, meta FROM users ORDER BY created_at');
     const mapped = users.map(u => ({
       username: u.username,
       role: u.role,
-      meta: u.meta ? JSON.parse(u.meta) : null
+      meta: u.meta || null
     }));
     res.json(mapped);
   } catch (e) {
@@ -161,7 +199,7 @@ app.post('/api/staff', async (req, res) => {
       return res.status(400).json({ error: 'Username and password required' });
     }
     
-    await runAsync('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', 
+    await queryDB('INSERT INTO users (username, password, role) VALUES ($1, $2, $3)', 
                    [username, password, role]);
     res.json({ ok: true, username });
   } catch (e) {
@@ -172,13 +210,13 @@ app.post('/api/staff', async (req, res) => {
 // Get menu
 app.get('/api/menu', async (req, res) => {
   try {
-    const menu = await allAsync('SELECT id, name, price, stock, meta FROM menu');
+    const menu = await queryDB('SELECT id, name, price, stock, meta FROM menu ORDER BY created_at');
     const mapped = menu.map(item => ({
       id: item.id,
       name: item.name,
       price: item.price,
       stock: item.stock,
-      meta: item.meta ? JSON.parse(item.meta) : null
+      meta: item.meta || null
     }));
     res.json(mapped);
   } catch (e) {
@@ -195,7 +233,7 @@ app.post('/api/menu', async (req, res) => {
     }
     
     const id = 'm-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-    await runAsync('INSERT INTO menu (id, name, price, stock) VALUES (?, ?, ?, ?)', 
+    await queryDB('INSERT INTO menu (id, name, price, stock) VALUES ($1, $2, $3, $4)', 
                    [id, name, parseFloat(price), parseInt(stock)]);
     res.json({ ok: true, id, name, price, stock });
   } catch (e) {
@@ -209,7 +247,7 @@ app.put('/api/menu/:id/stock', async (req, res) => {
     const { id } = req.params;
     const { stock } = req.body;
     
-    await runAsync('UPDATE menu SET stock = ? WHERE id = ?', [parseInt(stock), id]);
+    await queryDB('UPDATE menu SET stock = $1, updated_at = NOW() WHERE id = $2', [parseInt(stock), id]);
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -219,14 +257,14 @@ app.put('/api/menu/:id/stock', async (req, res) => {
 // Get orders/sales
 app.get('/api/orders', async (req, res) => {
   try {
-    const orders = await allAsync('SELECT id, staff, timestamp, total, payload, serverReceivedAt FROM orders ORDER BY serverReceivedAt DESC LIMIT 500');
+    const orders = await queryDB('SELECT id, staff, timestamp, total, payload, server_received_at FROM orders ORDER BY server_received_at DESC LIMIT 500');
     const mapped = orders.map(o => ({
       id: o.id,
       staff: o.staff,
       timestamp: o.timestamp,
       total: o.total,
-      payload: o.payload ? JSON.parse(o.payload) : null,
-      serverReceivedAt: o.serverReceivedAt
+      payload: o.payload || null,
+      serverReceivedAt: o.server_received_at
     }));
     res.json(mapped);
   } catch (e) {
@@ -242,11 +280,11 @@ app.post('/api/orders', async (req, res) => {
       return res.status(400).json({ error: 'Order with ID required' });
     }
     
-    const payload = JSON.stringify(order);
+    const payload = order;
     const serverReceivedAt = new Date().toISOString();
     
-    await runAsync('INSERT OR IGNORE INTO orders (id, staff, timestamp, total, payload, serverReceivedAt) VALUES (?, ?, ?, ?, ?, ?)',
-                   [order.id, order.user || order.staff || '', order.timestamp || new Date().toISOString(), order.total || 0, payload, serverReceivedAt]);
+    await queryDB('INSERT INTO orders (id, staff, timestamp, total, payload, server_received_at) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (id) DO NOTHING',
+                   [order.id, order.user || order.staff || '', order.timestamp || new Date().toISOString(), order.total || 0, JSON.stringify(payload), serverReceivedAt]);
     
     res.json({ ok: true, id: order.id });
   } catch (e) {
@@ -279,6 +317,8 @@ app.use((req, res, next) => {
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Shawarma Boss MERN Server running on http://0.0.0.0:${PORT}`);
-  console.log(`📊 Database: ${dbPath}`);
+  console.log(`🗄️ Database: PostgreSQL`);
   console.log(`🔗 API endpoints available at /api/*`);
+  console.log(`📱 React app served from /dist`);
+  console.log(`🔄 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
