@@ -427,7 +427,7 @@ const Admin = () => {
                     <td className="p-2 font-mono">#{order.id.slice(-8)}</td>
                     <td className="p-2">{order.staff}</td>
                     <td className="p-2">{new Date(order.timestamp).toLocaleDateString()}</td>
-                    <td className="p-2 text-right font-bold">GHS {order.total.toFixed(2)}</td>
+                    <td className="p-2 text-right font-bold">GHS {parseFloat(order.total || 0).toFixed(2)}</td>
                     <td className="p-2 text-xs">
                       {order.payload?.items?.slice(0, 2).map(item => item.name).join(', ')}
                       {order.payload?.items?.length > 2 && '...'}
