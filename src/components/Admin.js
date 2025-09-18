@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getStaff, addStaff, getMenu, addMenuItem, getOrders } from '../services/api';
+import { getStaff, addStaff, getMenu, addMenuItem, updateMenuStock, getOrders } from '../services/api';
 import { useAuth } from '../services/AuthContext';
 
 const Admin = () => {
@@ -13,6 +13,8 @@ const Admin = () => {
   // Form states
   const [newStaff, setNewStaff] = useState({ username: '', password: '', role: 'staff' });
   const [newMenuItem, setNewMenuItem] = useState({ name: '', price: '', stock: '' });
+  const [stockUpdates, setStockUpdates] = useState({});
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     loadAllData();
@@ -59,7 +61,7 @@ const Admin = () => {
   const handleAddMenuItem = async (e) => {
     e.preventDefault();
     if (!newMenuItem.name || !newMenuItem.price || !newMenuItem.stock) {
-      alert('Please fill in all fields');
+      setError('Please fill in all fields');
       return;
     }
 
@@ -71,11 +73,32 @@ const Admin = () => {
       });
       await loadAllData();
       setNewMenuItem({ name: '', price: '', stock: '' });
-      alert('Menu item added successfully!');
+      setSuccessMessage('Menu item added successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
       console.error('Error adding menu item:', error);
-      alert('Failed to add menu item');
+      setError('Failed to add menu item');
     }
+  };
+
+  const handleUpdateStock = async (itemId, newStock) => {
+    try {
+      await updateMenuStock(itemId, parseInt(newStock));
+      await loadAllData();
+      setStockUpdates({});
+      setSuccessMessage('Stock updated successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (error) {
+      console.error('Error updating stock:', error);
+      setError('Failed to update stock');
+    }
+  };
+
+  const handleStockChange = (itemId, value) => {
+    setStockUpdates(prev => ({
+      ...prev,
+      [itemId]: value
+    }));
   };
 
   const exportData = () => {
@@ -126,8 +149,8 @@ const Admin = () => {
     const todayOrders = orders.filter(order => 
       new Date(order.timestamp).toDateString() === today
     );
-    const totalSales = orders.reduce((sum, order) => sum + order.total, 0);
-    const todaySales = todayOrders.reduce((sum, order) => sum + order.total, 0);
+    const totalSales = orders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+    const todaySales = todayOrders.reduce((sum, order) => sum + Number(order.total || 0), 0);
 
     const staffSales = {};
     orders.forEach(order => {
@@ -135,7 +158,7 @@ const Admin = () => {
         staffSales[order.staff] = { orders: 0, total: 0 };
       }
       staffSales[order.staff].orders++;
-      staffSales[order.staff].total += order.total;
+      staffSales[order.staff].total += Number(order.total || 0);
     });
 
     return {
@@ -170,36 +193,53 @@ const Admin = () => {
   }
 
   return (
-    <div className="fade-in space-y-6">
-      <div className="card">
+    <div className="fade-in">
+      {/* Success/Error Messages */}
+      {successMessage && (
+        <div className="alert alert-success alert-dismissible fade show mb-4" role="alert">
+          <i className="fas fa-check-circle me-2"></i>{successMessage}
+          <button type="button" className="btn-close" onClick={() => setSuccessMessage('')}></button>
+        </div>
+      )}
+      {error && (
+        <div className="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+          <i className="fas fa-exclamation-triangle me-2"></i>{error}
+          <button type="button" className="btn-close" onClick={() => setError('')}></button>
+        </div>
+      )}
+
+      <div className="card mb-4">
         <div className="card-header">
-          <h3 className="text-lg font-bold text-danger">Admin Dashboard</h3>
+          <h3 className="h4 fw-bold text-danger mb-0">
+            <i className="fas fa-tachometer-alt me-2"></i>Admin Dashboard
+          </h3>
         </div>
         <div className="card-body">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="text-center p-4 bg-blue-50 rounded">
-              <div className="text-2xl font-bold text-blue-600">{salesStats.totalOrders}</div>
+            <div className="text-center p-4 bg-info bg-opacity-10 rounded">
+              <div className="text-2xl font-bold text-info">{salesStats.totalOrders}</div>
               <div className="text-sm text-muted">Total Orders</div>
             </div>
-            <div className="text-center p-4 bg-green-50 rounded">
-              <div className="text-2xl font-bold text-green-600">GHS {salesStats.totalSales.toFixed(2)}</div>
+            <div className="text-center p-4 bg-success bg-opacity-10 rounded">
+              <div className="text-2xl font-bold text-success">GHS {salesStats.totalSales.toFixed(2)}</div>
               <div className="text-sm text-muted">Total Sales</div>
             </div>
-            <div className="text-center p-4 bg-yellow-50 rounded">
-              <div className="text-2xl font-bold text-yellow-600">{salesStats.todayOrders}</div>
+            <div className="text-center p-4 bg-warning bg-opacity-10 rounded">
+              <div className="text-2xl font-bold text-warning">{salesStats.todayOrders}</div>
               <div className="text-sm text-muted">Today's Orders</div>
             </div>
-            <div className="text-center p-4 bg-red-50 rounded">
-              <div className="text-2xl font-bold text-red-600">GHS {salesStats.todaySales.toFixed(2)}</div>
+            <div className="text-center p-4 bg-danger bg-opacity-10 rounded">
+              <div className="text-2xl font-bold text-danger">GHS {salesStats.todaySales.toFixed(2)}</div>
               <div className="text-sm text-muted">Today's Sales</div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="row g-4 mb-4">
         {/* Staff Management */}
-        <div className="card">
+        <div className="col-lg-4">
+          <div className="card h-100">
           <div className="card-header">
             <h4 className="font-bold text-danger">Staff Management</h4>
           </div>
@@ -251,21 +291,43 @@ const Admin = () => {
           </div>
         </div>
 
+        </div>
+        </div>
+
         {/* Menu Management */}
-        <div className="card">
+        <div className="col-lg-4">
+          <div className="card h-100">
           <div className="card-header">
             <h4 className="font-bold text-danger">Menu Management</h4>
           </div>
           <div className="card-body">
-            <div className="space-y-2 mb-4 max-h-40 overflow-y-auto">
+            <div className="d-flex flex-column gap-2 mb-4" style={{ maxHeight: '300px', overflowY: 'auto' }}>
               {menu.map((item) => (
-                <div key={item.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                  <div>
-                    <div className="font-medium">{item.name}</div>
-                    <div className="text-sm text-muted">GHS {item.price.toFixed(2)}</div>
+                <div key={item.id} className="d-flex justify-content-between align-items-center p-2 bg-light rounded border">
+                  <div className="flex-grow-1">
+                    <div className="fw-medium">{item.name}</div>
+                    <div className="text-sm text-muted">GHS {parseFloat(item.price || 0).toFixed(2)}</div>
                   </div>
-                  <div className={`text-sm ${item.stock <= 5 ? 'text-danger' : 'text-success'}`}>
-                    Stock: {item.stock}
+                  <div className="d-flex align-items-center gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      value={stockUpdates[item.id] !== undefined ? stockUpdates[item.id] : item.stock}
+                      onChange={(e) => handleStockChange(item.id, e.target.value)}
+                      className="form-control form-control-sm"
+                      style={{ width: '70px' }}
+                    />
+                    {stockUpdates[item.id] !== undefined && stockUpdates[item.id] != item.stock && (
+                      <button
+                        onClick={() => handleUpdateStock(item.id, stockUpdates[item.id])}
+                        className="btn btn-sm btn-primary"
+                      >
+                        Update
+                      </button>
+                    )}
+                    <span className={`badge ${item.stock <= 5 ? 'bg-danger' : 'bg-success'}`}>
+                      {item.stock <= 0 ? 'Out' : item.stock <= 5 ? 'Low' : 'OK'}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -300,9 +362,11 @@ const Admin = () => {
             </form>
           </div>
         </div>
+        </div>
 
         {/* Export & Reports */}
-        <div className="card">
+        <div className="col-lg-4">
+          <div className="card h-100">
           <div className="card-header">
             <h4 className="font-bold text-danger">Export & Reports</h4>
           </div>

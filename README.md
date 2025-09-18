@@ -19,12 +19,14 @@ A modern, full-stack Point of Sale (POS) system built with the MERN stack (Mongo
 - **Responsive Design**: Mobile-first design that works on all devices
 - **Hot Reloading**: Development server with automatic rebuilds
 
-### Admin Features
-- Staff management and user roles
-- Menu item creation and stock updates
-- Sales analytics and reporting
-- Data export (JSON/CSV)
-- Real-time dashboard with key metrics
+### Enhanced Admin Features
+- **Advanced Staff Management**: Add/view staff with role assignment and sales performance tracking
+- **Real-time Menu Management**: Create menu items and update stock levels instantly with visual status indicators
+- **Comprehensive Sales Analytics**: Dashboard with total/daily sales, order counts, and staff performance metrics
+- **Enhanced Stock Management**: Inline stock updates with immediate feedback and low-stock alerts
+- **Professional UI/UX**: Bootstrap 5 integration with success/error notifications and responsive design
+- **Data Export & Reports**: JSON/CSV export functionality with comprehensive order history
+- **Visual Stock Alerts**: Real-time notifications for low inventory with status badges (OK/Low/Out)
 
 ## 🛠️ Technology Stack
 
@@ -234,10 +236,13 @@ PORT=5000
 - **Staff**: Can only view their own sales and process orders
 - **Admin**: Full access to all features including user management and analytics
 
-### Real-Time Stock Management
-- Automatic stock deduction on order completion
-- Low stock alerts (≤5 items)
-- Out of stock prevention
+### Advanced Real-Time Stock Management
+- **Inline Stock Updates**: Administrators can update stock levels directly from the menu management panel
+- **Visual Stock Indicators**: Color-coded badges showing stock status (Green=OK, Yellow=Low, Red=Out)
+- **Automatic Stock Deduction**: Stock levels automatically decrease when orders are processed
+- **Low Stock Alerts**: Immediate notifications when items reach ≤5 units with dedicated alerts section
+- **Real-time Feedback**: Success/error notifications for all stock operations with auto-dismissing alerts
+- **Stock Status Prevention**: System prevents orders when items are out of stock
 
 ### Sales Analytics
 - Real-time sales dashboard
@@ -274,16 +279,27 @@ This project is licensed under the ISC License - see the [LICENSE](LICENSE) file
 
 For support, please open an issue in the GitHub repository or contact the development team.
 
-## 🎯 Roadmap
+## ✅ Recent Enhancements (Latest Update)
 
-- [ ] JWT-based authentication
+- [x] **Enhanced Admin Dashboard**: Complete redesign with Bootstrap 5 integration
+- [x] **Real-time Stock Updates**: Inline stock modification with immediate visual feedback
+- [x] **Advanced Notification System**: Success/error alerts with auto-dismiss functionality
+- [x] **Improved Stock Management**: Visual status indicators and comprehensive alerts
+- [x] **Performance Optimizations**: Fixed price formatting issues and improved error handling
+- [x] **Professional UI/UX**: Modern responsive design with Font Awesome icons
+- [x] **Enhanced Sales Analytics**: Comprehensive dashboard with staff performance tracking
+
+## 🎯 Future Roadmap
+
+- [ ] JWT-based authentication with refresh tokens
 - [ ] Password hashing with bcrypt
-- [ ] Real-time notifications
+- [ ] Real-time WebSocket notifications
 - [ ] Multi-location support
-- [ ] Advanced reporting dashboard
+- [ ] Advanced reporting with charts and graphs
 - [ ] Mobile app (React Native)
-- [ ] Integration with payment processors
+- [ ] Integration with payment processors (Stripe, PayPal)
 - [ ] Barcode scanning support
+- [ ] Inventory forecasting and automated reordering
 
 ---
 
