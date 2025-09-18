@@ -19,7 +19,10 @@ app.use(cors({
 
 app.use(bodyParser.json({ limit: '10mb' }));
 
-// Serve static files from root directory (frontend)
+// Serve static files from dist directory (built React app)
+app.use(express.static(path.join(__dirname, 'dist')));
+
+// Serve legacy static files (icons, manifest, etc.)
 app.use(express.static(path.join(__dirname)));
 
 // Database setup
@@ -251,9 +254,26 @@ app.post('/api/orders', async (req, res) => {
   }
 });
 
-// Serve the main HTML file for the root route
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+// Catch-all handler for React SPA routing (must be last)
+app.use((req, res, next) => {
+  // Skip API routes
+  if (req.path.startsWith('/api/')) {
+    return next();
+  }
+  
+  // Skip static files
+  if (req.path.includes('.')) {
+    return next();
+  }
+  
+  // Serve React app
+  const distIndexPath = path.join(__dirname, 'dist', 'index.html');
+  if (require('fs').existsSync(distIndexPath)) {
+    res.sendFile(distIndexPath);
+  } else {
+    // Fallback to legacy index.html if React app not built
+    res.sendFile(path.join(__dirname, 'index.html'));
+  }
 });
 
 // Start server
