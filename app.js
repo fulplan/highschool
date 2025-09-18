@@ -1,83 +1,83 @@
-/* app.js - Shawarma Boss POS (PostgreSQL + JWT Backend)
-   ✅ Real database integration with PostgreSQL
-   ✅ JWT-based authentication
-   ✅ Role-based access control
-   ✅ Real-time data sync
+/* app.js - Shawarma Boss POS (updated with role-based sales & staff filter)
+   ✅ Admin sees all sales OR filter by staff
+   ✅ Staff sees only their own sales
+   ✅ Menu shared for all users
 */
 
-// ---------- API Configuration ----------
-// Use Replit domain for backend API in development
-const API_BASE = window.location.hostname === 'localhost' 
-  ? 'http://localhost:8000' 
-  : `https://${window.location.hostname}:8000`;
-
-let runtime = {
-  user: null,
-  token: localStorage.getItem('auth_token'),
-  cart: [],
-  menu: [],
-  orders: [],
-  users: []
+// ---------- Helpers & storage compatibility ----------
+const DB_KEY = 'shawarma_boss_db_v1';
+const LEGACY_KEYS = {
+  menu: ['shawarma_boss_menu','menu','items'],
+  staff: ['shawarma_boss_staff','staff'],
+  sales: ['shawarma_boss_sales','sales','shawarma_sales'],
+  quick: ['shawarma_boss_quick_sales','quickSales'],
+  currentUser: ['shawarma_boss_current_user','loggedIn']
 };
 
-// ---------- API Helper Functions ----------
-async function apiRequest(endpoint, options = {}) {
-  const config = {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(runtime.token && { 'Authorization': `Bearer ${runtime.token}` })
-    },
-    ...options
+function safeParse(key, fallback=null) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch (e) { return fallback; }
+}
+
+function writeLegacy(keyName, value) {
+  const arr = LEGACY_KEYS[keyName] || [];
+  arr.forEach(k => {
+    try { localStorage.setItem(k, JSON.stringify(value)); } catch(e){ /* ignore */ }
+  });
+}
+
+function loadDB() {
+  const dbFromMain = safeParse(DB_KEY, null);
+  if (dbFromMain && typeof dbFromMain === 'object') return dbFromMain;
+  return {
+    users: safeParse(LEGACY_KEYS.staff[0], null),
+    menu: safeParse(LEGACY_KEYS.menu[0], null),
+    orders: safeParse(LEGACY_KEYS.sales[0], null),
+    quick: safeParse(LEGACY_KEYS.quick[0], null),
+    currentUser: safeParse(LEGACY_KEYS.currentUser[0], null)
   };
+}
 
-  if (config.body && typeof config.body !== 'string') {
-    config.body = JSON.stringify(config.body);
+function ensureDefaults(db) {
+  if (!Array.isArray(db.users) || db.users.length === 0) {
+    db.users = [
+      { username: 'admin', password: 'admin123', role: 'admin' },
+      { username: 'staff1', password: 'staff123', role: 'staff' }
+    ];
   }
+  if (!Array.isArray(db.menu) || db.menu.length === 0) {
+    db.menu = [
+      { id: 'm-1', name: 'Shawarma Wrap', price: 20, stock: 25 },
+      { id: 'm-2', name: 'Chicken Shawarma', price: 25, stock: 20 },
+      { id: 'm-3', name: 'Beef Shawarma', price: 28, stock: 18 }
+    ];
+  }
+  if (!Array.isArray(db.orders)) db.orders = [];
+  if (!Array.isArray(db.quick)) db.quick = [];
+  return db;
+}
 
+function saveDB(db) {
   try {
-    const response = await fetch(`${API_BASE}${endpoint}`, config);
-    
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Network error' }));
-      throw new Error(error.error || `HTTP ${response.status}`);
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error(`API Error (${endpoint}):`, error);
-    throw error;
-  }
+    localStorage.setItem(DB_KEY, JSON.stringify(db));
+  } catch(e){}
+  writeLegacy('menu', db.menu);
+  writeLegacy('staff', db.users);
+  writeLegacy('sales', db.orders);
+  writeLegacy('quick', db.quick);
+  if (db.currentUser) writeLegacy('currentUser', db.currentUser);
 }
 
-// Authentication helpers
-function setAuthToken(token) {
-  runtime.token = token;
-  localStorage.setItem('auth_token', token);
-}
+// ---------- Initialize ----------
+let db = ensureDefaults(loadDB() || {});
+saveDB(db);
 
-function clearAuthToken() {
-  runtime.token = null;
-  runtime.user = null;
-  localStorage.removeItem('auth_token');
-}
-
-// Check if user is logged in and token is valid
-async function checkAuthStatus() {
-  if (!runtime.token) return false;
-  
-  try {
-    // Use a simple endpoint that works for all roles
-    const response = await apiRequest('/health');
-    return true;
-  } catch (error) {
-    if (error.message.includes('403') || error.message.includes('401')) {
-      clearAuthToken();
-      return false;
-    }
-    return true; // Might be a network error, keep token
-  }
-}
+let runtime = {
+  user: safeParse('shawarma_boss_current_user', null) || db.currentUser || null,
+  cart: []
+};
 
 // DOM helpers
 const $ = s => document.querySelector(s);
@@ -91,23 +91,21 @@ function showLogin() {
   $('#headerControls').innerHTML = '';
 }
 
-async function showAppForUser() {
+function showAppForUser() {
   $('#loginScreen')?.classList.add('d-none');
   $('#appRoot')?.classList.remove('d-none');
 
   const h = $('#headerControls');
   if (runtime.user) {
-    h.innerHTML = `<div class="text-end small pe-2">Logged in: <strong>${runtime.user.username}</strong> (${runtime.user.role})
+    h.innerHTML = `<div class="text-end small pe-2">Logged in: <strong>${runtime.user.username}</strong> 
       <button id="logoutBtnHeader" class="btn btn-sm btn-outline-light ms-2">Logout</button></div>`;
     $('#logoutBtnHeader')?.addEventListener('click', () => logout());
   }
 
-  const isAdmin = runtime.user && (runtime.user.role === 'admin' || runtime.user.role === 'super_admin');
+  const isAdmin = runtime.user && runtime.user.role === 'admin';
   if (isAdmin) $('#adminPanel')?.classList.remove('d-none');
   else $('#adminPanel')?.classList.add('d-none');
 
-  // Load data and render UI
-  await loadInitialData();
   renderMenuGrid();
   renderCart();
   renderRecentSales();
@@ -115,73 +113,24 @@ async function showAppForUser() {
   renderAdminPanel();
 }
 
-async function loginAttempt() {
+function loginAttempt() {
   $('#loginErr')?.classList.add('d-none');
-  const username = ($('#loginUsername')?.value || '').trim();
-  const password = ($('#loginPassword')?.value || '').trim();
-  
-  if (!username || !password) {
-    $('#loginErr').textContent = 'Please enter username and password';
-    $('#loginErr')?.classList.remove('d-none');
-    return;
-  }
-
-  try {
-    const response = await apiRequest('/login', {
-      method: 'POST',
-      body: { username, password }
-    });
-
-    if (response.token) {
-      setAuthToken(response.token);
-      runtime.user = response.user;
-      await showAppForUser();
-    } else {
-      $('#loginErr').textContent = response.error || 'Login failed';
-      $('#loginErr')?.classList.remove('d-none');
-    }
-  } catch (error) {
-    $('#loginErr').textContent = error.message || 'Login failed';
-    $('#loginErr')?.classList.remove('d-none');
-  }
+  const u = ($('#loginUsername')?.value || '').trim();
+  const p = ($('#loginPassword')?.value || '').trim();
+  const found = db.users.find(x => x.username === u && x.password === p);
+  if (!found) return $('#loginErr')?.classList.remove('d-none');
+  runtime.user = found;
+  db.currentUser = found;
+  saveDB(db);
+  showAppForUser();
 }
 
 function logout() {
-  clearAuthToken();
-  runtime.cart = [];
-  runtime.menu = [];
-  runtime.orders = [];
-  runtime.users = [];
+  runtime.user = null;
+  db.currentUser = null;
+  try { localStorage.removeItem('shawarma_boss_current_user'); } catch(e){}
+  saveDB(db);
   showLogin();
-}
-
-// Load initial data from API
-async function loadInitialData() {
-  try {
-    const [menuResponse] = await Promise.all([
-      apiRequest('/menu')
-    ]);
-    
-    runtime.menu = menuResponse || [];
-    
-    // Load additional data for admins
-    if (runtime.user && (runtime.user.role === 'admin' || runtime.user.role === 'super_admin')) {
-      try {
-        const [usersResponse, ordersResponse] = await Promise.all([
-          apiRequest('/users'),
-          apiRequest('/orders?limit=50')
-        ]);
-        
-        runtime.users = usersResponse || [];
-        runtime.orders = ordersResponse || [];
-      } catch (error) {
-        console.warn('Could not load admin data:', error);
-      }
-    }
-  } catch (error) {
-    console.error('Failed to load initial data:', error);
-    alert('Failed to load data. Please refresh the page.');
-  }
 }
 
 // ---------- MENU & CART ----------
@@ -189,65 +138,29 @@ function renderMenuGrid() {
   const container = $('#menuGrid');
   if (!container) return;
   container.innerHTML = '';
-  
-  if (!runtime.menu || runtime.menu.length === 0) {
-    container.innerHTML = '<div class="text-center text-muted">No menu items available</div>';
-    return;
-  }
-  
   const tpl = document.getElementById('menuCardTpl');
-  runtime.menu.forEach((item) => {
+  db.menu.forEach((item, idx) => {
     const node = tpl.content.cloneNode(true);
     node.querySelector('.item-name').textContent = item.name;
     node.querySelector('.item-price-badge').textContent = `GHS ${Number(item.price).toFixed(2)}`;
-    node.querySelector('.item-stock').textContent = `Stock: ${item.stock} | ${item.category || 'Uncategorized'}`;
+    node.querySelector('.item-stock').textContent = `Stock: ${item.stock}`;
     const qtyInput = node.querySelector('.qty-input');
     qtyInput.value = 1;
-    qtyInput.max = item.stock;
-    
-    const addButton = node.querySelector('.add-to-cart');
-    if (item.stock <= 0) {
-      addButton.disabled = true;
-      addButton.textContent = 'Out of Stock';
-      addButton.classList.add('btn-secondary');
-      addButton.classList.remove('btn-danger');
-    } else {
-      addButton.addEventListener('click', () => {
-        const q = Math.max(1, Math.min(parseInt(qtyInput.value) || 1, item.stock));
-        if (item.stock < q) return alert('Not enough stock available');
-        addToCart(item.id, q);
-      });
-    }
-    
+    node.querySelector('.add-to-cart').addEventListener('click', () => {
+      const q = Math.max(1, parseInt(qtyInput.value) || 1);
+      if (item.stock < q) return alert('Not enough stock');
+      addToCart(item.id || ('id-' + idx), q);
+    });
     container.appendChild(node);
   });
 }
 
 function addToCart(id, qty) {
-  const item = runtime.menu.find(m => m.id === id);
+  const item = db.menu.find(m => m.id === id);
   if (!item) return;
-  
   const existing = runtime.cart.find(c => c.id === id);
-  const currentQty = existing ? existing.qty : 0;
-  const newQty = currentQty + qty;
-  
-  if (newQty > item.stock) {
-    alert(`Cannot add ${qty} items. Only ${item.stock - currentQty} available.`);
-    return;
-  }
-  
-  if (existing) {
-    existing.qty = newQty;
-  } else {
-    runtime.cart.push({ 
-      id: item.id, 
-      name: item.name, 
-      price: Number(item.price), 
-      qty: qty,
-      menu_item_id: item.id 
-    });
-  }
-  
+  if (existing) existing.qty += qty;
+  else runtime.cart.push({ id: id, name: item.name, price: Number(item.price), qty });
   renderCart();
 }
 
@@ -260,185 +173,53 @@ function renderCart() {
     $('#cartTotal').textContent = 'GHS 0.00';
     return;
   }
-  
-  let subtotal = 0;
-  runtime.cart.forEach((item, idx) => {
-    subtotal += item.qty * item.price;
+  let total = 0;
+  runtime.cart.forEach((it, idx) => {
+    total += it.qty * it.price;
     const row = document.createElement('div');
     row.className = 'd-flex justify-content-between align-items-center py-2 border-bottom';
-    row.innerHTML = `
-      <div>
-        <strong>${item.name}</strong>
-        <div class="small text-muted">${item.qty} × GHS ${item.price.toFixed(2)}</div>
-      </div>
-      <div class="text-end">
-        <div class="fw-bold">GHS ${(item.qty * item.price).toFixed(2)}</div>
-        <div>
-          <button class="btn btn-sm btn-outline-secondary decrease-qty" data-idx="${idx}">-</button>
-          <span class="mx-1">${item.qty}</span>
-          <button class="btn btn-sm btn-outline-secondary increase-qty" data-idx="${idx}">+</button>
-          <button class="btn btn-sm btn-outline-danger ms-2 remove-item" data-idx="${idx}">×</button>
-        </div>
-      </div>`;
+    row.innerHTML = `<div><strong>${it.name}</strong><div class="small text-muted">${it.qty} × GHS ${it.price.toFixed(2)}</div></div>
+      <div class="text-end"><div class="fw-bold">GHS ${(it.qty*it.price).toFixed(2)}</div>
+        <button class="btn btn-sm btn-outline-danger remove-item" data-idx="${idx}">Del</button></div>`;
     list.appendChild(row);
   });
-  
-  // Calculate tax and total
-  const taxRate = 15; // TODO: Get from settings API
-  const taxAmount = (subtotal * taxRate) / 100;
-  const total = subtotal + taxAmount;
-  
-  // Update totals display
-  const totalsHtml = `
-    <div class="small d-flex justify-content-between">
-      <span>Subtotal:</span>
-      <span>GHS ${subtotal.toFixed(2)}</span>
-    </div>
-    <div class="small d-flex justify-content-between">
-      <span>Tax (${taxRate}%):</span>
-      <span>GHS ${taxAmount.toFixed(2)}</span>
-    </div>`;
-  
-  const totalElement = $('#cartTotal');
-  totalElement.innerHTML = `${totalsHtml}<div class="fw-bold">GHS ${total.toFixed(2)}</div>`;
-  
-  // Add event listeners
-  $$('.remove-item').forEach(btn => btn.addEventListener('click', e => {
-    runtime.cart.splice(parseInt(e.currentTarget.dataset.idx), 1);
+  $('#cartTotal').textContent = `GHS ${total.toFixed(2)}`;
+  $$('.remove-item').forEach(b => b.addEventListener('click', e => {
+    runtime.cart.splice(parseInt(e.currentTarget.dataset.idx),1);
     renderCart();
   }));
-  
-  $$('.decrease-qty').forEach(btn => btn.addEventListener('click', e => {
-    const idx = parseInt(e.currentTarget.dataset.idx);
-    if (runtime.cart[idx].qty > 1) {
-      runtime.cart[idx].qty--;
-      renderCart();
-    }
-  }));
-  
-  $$('.increase-qty').forEach(btn => btn.addEventListener('click', e => {
-    const idx = parseInt(e.currentTarget.dataset.idx);
-    const item = runtime.cart[idx];
-    const menuItem = runtime.menu.find(m => m.id === item.id);
-    
-    if (menuItem && item.qty < menuItem.stock) {
-      runtime.cart[idx].qty++;
-      renderCart();
-    } else {
-      alert('Cannot add more items. Stock limit reached.');
-    }
-  }));
 }
 
-function clearCart() { 
-  runtime.cart = []; 
-  renderCart(); 
-}
+function clearCart() { runtime.cart = []; renderCart(); }
 
 // ---------- ORDERS ----------
-async function confirmOrder() {
-  if (!runtime.cart.length) return alert('Cart is empty');
-  if (!runtime.user) return alert('Please login first');
+function confirmOrder() {
+  if (!runtime.cart.length) return alert('Cart empty');
+  if (!runtime.user) return alert('Please login');
 
-  const confirmBtn = $('#confirmOrderBtn');
-  const originalText = confirmBtn.textContent;
-  confirmBtn.disabled = true;
-  confirmBtn.textContent = 'Processing...';
+  const order = {
+    id: 'O' + Date.now(),
+    staff: runtime.user.username,
+    items: JSON.parse(JSON.stringify(runtime.cart)),
+    total: runtime.cart.reduce((s,i)=>s + i.qty*i.price, 0),
+    timestamp: new Date().toISOString()
+  };
 
-  try {
-    // Prepare order data for API
-    const orderData = {
-      items: runtime.cart.map(item => ({
-        menu_item_id: item.menu_item_id,
-        quantity: item.qty,
-        notes: item.notes || ''
-      })),
-      customer_name: $('#customerName')?.value || '',
-      customer_phone: $('#customerPhone')?.value || '',
-      payment_method: 'cash', // Default, can be enhanced later
-      notes: $('#orderNotes')?.value || ''
-    };
+  order.items.forEach(it => {
+    const m = db.menu.find(x => x.id === it.id);
+    if (m) m.stock = Math.max(0, m.stock - it.qty);
+  });
 
-    const response = await apiRequest('/orders', {
-      method: 'POST',
-      body: orderData
-    });
+  db.orders.push(order);
+  db.quick.push(order);
+  saveDB(db);
 
-    if (response.success) {
-      // Show success message
-      alert(`Order ${response.order.order_number} created successfully!`);
-      
-      // Clear cart and refresh data
-      runtime.cart = [];
-      await loadInitialData(); // Refresh menu (updated stock) and orders
-      renderCart();
-      renderMenuGrid();
-      renderRecentSales();
-      renderSalesReport();
-      renderAdminPanel();
-      
-      // Clear customer info
-      if ($('#customerName')) $('#customerName').value = '';
-      if ($('#customerPhone')) $('#customerPhone').value = '';
-      if ($('#orderNotes')) $('#orderNotes').value = '';
-      
-      // Generate and show receipt
-      showReceipt(response.order);
-    } else {
-      alert('Failed to create order: ' + (response.error || 'Unknown error'));
-    }
-  } catch (error) {
-    console.error('Order creation error:', error);
-    alert('Failed to create order: ' + error.message);
-  } finally {
-    confirmBtn.disabled = false;
-    confirmBtn.textContent = originalText;
-  }
-}
-
-// Show receipt modal
-function showReceipt(order) {
-  const modal = $('#receiptModal');
-  const body = $('#receiptBody');
-  
-  if (!modal || !body) return;
-  
-  const itemsHtml = order.items.map(item => 
-    `<div class="d-flex justify-content-between">
-      <span>${item.quantity}x ${item.item_name}</span>
-      <span>GHS ${item.total_price}</span>
-    </div>`
-  ).join('');
-  
-  body.innerHTML = `
-    <div class="text-center mb-3">
-      <h6>Shawarma Boss</h6>
-      <small>Order: ${order.order_number}</small><br>
-      <small>${new Date(order.order_date).toLocaleString()}</small><br>
-      <small>Staff: ${order.staff_name || runtime.user.username}</small>
-    </div>
-    <hr>
-    ${itemsHtml}
-    <hr>
-    <div class="d-flex justify-content-between">
-      <span>Subtotal:</span>
-      <span>GHS ${parseFloat(order.subtotal).toFixed(2)}</span>
-    </div>
-    <div class="d-flex justify-content-between">
-      <span>Tax:</span>
-      <span>GHS ${parseFloat(order.tax_amount).toFixed(2)}</span>
-    </div>
-    <div class="d-flex justify-content-between fw-bold">
-      <span>Total:</span>
-      <span>GHS ${parseFloat(order.total_amount).toFixed(2)}</span>
-    </div>
-    ${order.customer_name ? `<hr><small>Customer: ${order.customer_name}</small>` : ''}
-    ${order.customer_phone ? `<br><small>Phone: ${order.customer_phone}</small>` : ''}
-  `;
-  
-  // Show modal using Bootstrap
-  const bsModal = new bootstrap.Modal(modal);
-  bsModal.show();
+  runtime.cart = [];
+  renderCart();
+  renderMenuGrid();
+  renderRecentSales();
+  renderSalesReport();
+  renderAdminPanel();
 }
 
 // ---------- ADMIN PANEL ----------
@@ -518,39 +299,23 @@ function renderStockAlerts() {
 }
 
 // ---------- SALES REPORT ----------
-async function renderRecentSales() {
-  const root = $('#recentSales'); 
-  if (!root) return;
-  
-  root.innerHTML = '<div class="small text-muted">Loading...</div>';
+function renderRecentSales() {
+  const root = $('#recentSales'); if (!root) return;
+  root.innerHTML = '';
 
-  try {
-    const orders = await apiRequest('/orders?limit=5');
-    
-    if (!orders || orders.length === 0) { 
-      root.innerHTML = '<div class="small text-muted">No recent sales</div>';
-      return; 
-    }
-
-    root.innerHTML = '';
-    orders.forEach(order => {
-      const div = document.createElement('div');
-      div.className = 'mb-1 small d-flex justify-content-between';
-      div.innerHTML = `
-        <div>
-          <strong>${order.order_number}</strong><br>
-          <span class="text-muted">${order.staff_name || 'Unknown'}</span>
-        </div>
-        <div class="text-end">
-          <div class="fw-bold">GHS ${parseFloat(order.total_amount).toFixed(2)}</div>
-          <div class="text-muted">${new Date(order.order_date).toLocaleString()}</div>
-        </div>`;
-      root.appendChild(div);
-    });
-  } catch (error) {
-    console.error('Error loading recent sales:', error);
-    root.innerHTML = '<div class="small text-danger">Failed to load sales</div>';
+  let orders = db.orders || [];
+  if (runtime.user.role === 'staff') {
+    orders = orders.filter(o => o.staff === runtime.user.username);
   }
+
+  const last = orders.slice(-5).reverse();
+  if (!last.length) { root.textContent = 'No sales yet.'; return; }
+
+  last.forEach(o => {
+    const div = document.createElement('div'); div.className = 'mb-1 small';
+    div.innerHTML = `${o.id} • ${o.staff} • GHS ${o.total.toFixed(2)} • ${new Date(o.timestamp).toLocaleString()}`;
+    root.appendChild(div);
+  });
 }
 
 function renderSalesReport() {
