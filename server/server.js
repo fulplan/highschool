@@ -262,8 +262,18 @@ app.post('/sales/bulk', requireToken, (req,res) => {
   ordersBulkEndpoint(req, res);
 });
 
-// Simple root
-app.get('/', (req,res) => res.json({ ok:true, message:'Shawarma Boss sync server' }));
+// Serve static files in production (when SERVE_STATIC=true)
+if (process.env.SERVE_STATIC === 'true') {
+  app.use(express.static(path.join(__dirname, '..')));
+  
+  // Serve index.html for root requests
+  app.get('/', (req,res) => {
+    res.sendFile(path.join(__dirname, '..', 'index.html'));
+  });
+} else {
+  // Simple root for API-only mode
+  app.get('/', (req,res) => res.json({ ok:true, message:'Shawarma Boss sync server' }));
+}
 
 // Start server
 app.listen(PORT, () => console.log(`Server listening on ${PORT} (DB: ${dbPath})`));
