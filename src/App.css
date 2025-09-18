@@ -341,6 +341,327 @@
   }
 }
 
+/* ===== BEAUTIFUL NAVBAR STYLES ===== */
+.beautiful-navbar {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d3748 50%, #1a202c 100%) !important;
+  border-bottom: 3px solid #dc3545;
+  min-height: 70px;
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+  backdrop-filter: blur(10px);
+}
+
+/* Brand Section */
+.brand-icon-wrapper {
+  position: relative;
+}
+
+.brand-logo {
+  width: 45px;
+  height: 45px;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+  transition: all 0.3s ease;
+}
+
+.brand-text .brand-name {
+  color: #ffffff;
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.brand-tagline {
+  color: #cbd5e0;
+  font-size: 0.8rem;
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+.hover-lift {
+  transition: all 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+
+.hover-lift:hover .brand-logo {
+  transform: rotate(-5deg) scale(1.1);
+  box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+}
+
+/* Navigation Pills */
+.nav-pills-container {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px;
+  border-radius: 25px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-pill {
+  background: transparent;
+  border: none;
+  color: #e2e8f0;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-pill::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  transition: left 0.6s ease;
+}
+
+.nav-pill:hover::before {
+  left: 100%;
+}
+
+.nav-pill:hover {
+  background: rgba(220, 53, 69, 0.2);
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(220, 53, 69, 0.3);
+}
+
+.nav-pill:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.nav-pill.active {
+  background: linear-gradient(135deg, #dc3545, #c82333);
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+  transform: translateY(-1px);
+}
+
+.nav-pill.active i {
+  animation: pulse 2s infinite;
+}
+
+/* User Section */
+.user-section {
+  position: relative;
+}
+
+.user-info {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px 15px;
+  border-radius: 15px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.user-name {
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+.role-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+  margin-top: 2px;
+}
+
+.role-badge.admin {
+  background: linear-gradient(135deg, #ffd700, #ffed4e);
+  color: #1a202c;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+
+.role-badge.staff {
+  background: linear-gradient(135deg, #4299e1, #63b3ed);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(66, 153, 225, 0.3);
+}
+
+/* Action Buttons */
+.user-menu-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.user-menu-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.user-menu-btn:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.logout-btn {
+  background: linear-gradient(135deg, #e53e3e, #c53030);
+  border: none;
+  color: #ffffff;
+  padding: 10px 16px;
+  border-radius: 20px;
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.logout-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.6s ease;
+}
+
+.logout-btn:hover::before {
+  left: 100%;
+}
+
+.logout-btn:hover {
+  background: linear-gradient(135deg, #c53030, #9c2626);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(197, 48, 48, 0.4);
+  color: #ffffff;
+}
+
+.logout-btn:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+/* Dropdown Styling */
+.user-dropdown {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 15px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+  padding: 8px 0;
+  margin-top: 8px;
+}
+
+.user-dropdown .dropdown-header {
+  color: #2d3748;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 8px 16px;
+}
+
+.user-dropdown .dropdown-item {
+  padding: 8px 16px;
+  border-radius: 8px;
+  margin: 2px 8px;
+  transition: all 0.2s ease;
+}
+
+.user-dropdown .dropdown-item:hover {
+  background: rgba(220, 53, 69, 0.1);
+  transform: translateX(4px);
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.beautiful-navbar {
+  animation: fadeInDown 0.6s ease-out;
+}
+
+/* Responsive Design */
+@media (max-width: 991.98px) {
+  .brand-name {
+    font-size: 1.5rem !important;
+  }
+  
+  .nav-pills-container {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1030;
+    background: rgba(26, 26, 26, 0.95);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  
+  /* Add safe spacing for mobile bottom navigation */
+  .pos-layout,
+  .admin-layout {
+    padding-bottom: 80px;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+  
+  /* Ensure dropdowns appear above mobile nav */
+  .user-dropdown {
+    z-index: 1040;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .beautiful-navbar {
+    min-height: 60px;
+  }
+  
+  .brand-logo {
+    width: 35px;
+    height: 35px;
+  }
+  
+  .brand-name {
+    font-size: 1.3rem !important;
+  }
+  
+  .nav-pill {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+  }
+}
+
 /* ===== UTILITY CLASSES ===== */
 .card-hover {
   transition: all 0.3s ease;

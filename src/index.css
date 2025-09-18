@@ -260,12 +260,12 @@ body {
 .border-red-200 { border-color: #fecaca; }
 .rounded { border-radius: 0.25rem; }
 
-/* Navbar compact styling */
-.navbar {
+/* Legacy navbar compact styling - only for non-beautiful navbars */
+.navbar:not(.beautiful-navbar) {
   --bs-navbar-padding-y: .25rem;
 }
 
-.navbar .navbar-brand img {
+.navbar:not(.beautiful-navbar) .navbar-brand img {
   width: 32px !important;
   height: 32px !important;
   max-width: 32px !important;
@@ -273,12 +273,12 @@ body {
   object-fit: contain;
 }
 
-.navbar-nav .nav-link {
+.navbar:not(.beautiful-navbar) .navbar-nav .nav-link {
   padding: .25rem .5rem;
 }
 
 @media (max-width: 576px) {
-  .navbar .navbar-brand small {
+  .navbar:not(.beautiful-navbar) .navbar-brand small {
     display: none;
   }
 }
