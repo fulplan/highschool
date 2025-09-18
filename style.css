@@ -1,0 +1,26 @@
+/* Shawarma Boss theme */
+:root{
+  --brand-red: #e60000;
+  --brand-black: #111111;
+  --brand-white: #ffffff;
+}
+
+/* small Tailwind-friendly tweaks */
+body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
+
+/* menu card styles */
+.menu-card { border-radius: 12px; box-shadow: 0 6px 18px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.06); }
+.menu-card .item-price-badge { font-weight: 700; padding: .45rem .6rem; }
+
+/* hover lift */
+.menu-card:hover { transform: translateY(-4px); transition: transform .15s ease; }
+
+/* small utility */
+.hidden { display: none !important; }
+
+/* receipt print styles (used when printing receipt window) */
+@media print {
+  body * { visibility: hidden; }
+  .receipt-print, .receipt-print * { visibility: visible; }
+  .receipt-print { position: absolute; left: 0; top: 0; width: 320px; font-family: monospace; font-size:12px; }
+}
