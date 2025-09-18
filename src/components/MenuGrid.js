@@ -44,7 +44,7 @@ const MenuGrid = ({ menu }) => {
               <div className="flex justify-between items-start mb-2">
                 <h5 className="font-bold text-lg">{item.name}</h5>
                 <span className="text-danger font-bold text-lg">
-                  GHS {item.price.toFixed(2)}
+                  GHS {parseFloat(item.price || 0).toFixed(2)}
                 </span>
               </div>
               
