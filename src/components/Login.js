@@ -39,7 +39,7 @@ const Login = () => {
             <img 
               src="/icons/logo.png" 
               alt="Shawarma Boss Logo" 
-              className="w-20 h-20 mx-auto mb-4 rounded"
+              className="w-12 h-12 mx-auto mb-4 rounded"
               onError={(e) => {
                 e.target.style.display = 'none';
               }}

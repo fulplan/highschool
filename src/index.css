@@ -216,6 +216,44 @@ body {
   color: #dc3545;
 }
 
+/* Width/Height utility classes */
+.w-12 { width: 3rem; }
+.w-16 { width: 4rem; }
+.w-20 { width: 5rem; }
+.h-12 { height: 3rem; }
+.h-16 { height: 4rem; }
+.h-20 { height: 5rem; }
+
+.w-4 { width: 1rem; }
+.h-4 { height: 1rem; }
+
+.mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.mb-1 { margin-bottom: 0.25rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-4 { margin-bottom: 1rem; }
+.mb-6 { margin-bottom: 1.5rem; }
+
+.mt-1 { margin-top: 0.25rem; }
+.mt-6 { margin-top: 1.5rem; }
+
+.min-h-96 { min-height: 24rem; }
+
+.max-w-md { max-width: 28rem; }
+
+.w-full { width: 100%; }
+
+.space-y-1 > * + * { margin-top: 0.25rem; }
+
+.justify-center { justify-content: center; }
+
+.bg-red-50 { background-color: #fef2f2; }
+.border-red-200 { border-color: #fecaca; }
+.rounded { border-radius: 0.25rem; }
+
 /* Navbar compact styling */
 .navbar {
   --bs-navbar-padding-y: .25rem;
