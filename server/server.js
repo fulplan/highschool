@@ -8,7 +8,7 @@ const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 4000;
 const SYNC_TOKEN = process.env.SYNC_TOKEN || ''; // optional
 const JWT_SECRET = process.env.JWT_SECRET;
 
