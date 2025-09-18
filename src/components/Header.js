@@ -24,8 +24,7 @@ const Header = () => {
             src="/icons/logo.png" 
             alt="Shawarma Boss Logo" 
             className="me-2 rounded"
-            width="32"
-            height="32"
+            style={{ width: '32px', height: '32px', objectFit: 'contain' }}
           />
           <span className="fw-bold text-danger fs-5">Shawarma Boss</span>
           <small className="text-muted ms-2 d-none d-md-inline">Modern MERN Stack POS</small>
