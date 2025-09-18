@@ -6,8 +6,10 @@
 */
 
 // ---------- API Configuration ----------
-// Always use port 8000 for backend API in development
-const API_BASE = 'http://localhost:8000';
+// Use Replit domain for backend API in development
+const API_BASE = window.location.hostname === 'localhost' 
+  ? 'http://localhost:8000' 
+  : `https://${window.location.hostname}:8000`;
 
 let runtime = {
   user: null,
