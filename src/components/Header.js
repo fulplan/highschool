@@ -11,9 +11,9 @@ const Header = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  // Simulated notification system (can be replaced with real-time notifications)
+  // Mock notification system for UI demonstration (ready for real-time integration)
   useEffect(() => {
-    // Mock notifications for demo purposes
+    // Demo notifications - can be replaced with WebSocket/SSE for real-time updates
     const mockNotifications = [
       { id: 1, type: 'order', message: 'New order #1234 received', time: '2 min ago', read: false },
       { id: 2, type: 'system', message: 'Daily backup completed', time: '1 hour ago', read: true },
@@ -21,6 +21,9 @@ const Header = () => {
     ];
     setNotifications(mockNotifications);
     setUnreadCount(mockNotifications.filter(n => !n.read).length);
+    
+    // TODO: Replace with real-time notification subscription
+    // Example: WebSocket connection, Server-Sent Events, or polling
   }, []);
 
   // Close dropdowns when clicking outside
