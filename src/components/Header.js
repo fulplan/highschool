@@ -17,30 +17,29 @@ const Header = () => {
   };
 
   return (
-    <header className="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
-      <div className="container flex justify-between items-center">
-        <div className="flex items-center gap-4">
+    <header className="navbar navbar-dark bg-dark shadow-sm py-1">
+      <div className="container d-flex align-items-center justify-content-between">
+        <a className="navbar-brand d-flex align-items-center" href="#" onClick={(e) => { e.preventDefault(); handleNavigation('/'); }}>
           <img 
             src="/icons/logo.png" 
             alt="Shawarma Boss Logo" 
-            className="navbar-brand-img"
-            style={{ width: '48px', height: '48px', borderRadius: '0.25rem' }}
+            className="me-2 rounded"
+            width="32"
+            height="32"
             onError={(e) => {
               e.target.style.display = 'none';
             }}
           />
-          <div>
-            <h1 className="text-xl font-bold text-danger mb-0">Shawarma Boss</h1>
-            <small className="text-muted">Modern MERN Stack POS</small>
-          </div>
-        </div>
+          <span className="fw-bold text-danger fs-5">Shawarma Boss</span>
+          <small className="text-muted ms-2 d-none d-md-inline">Modern MERN Stack POS</small>
+        </a>
 
         {user && (
-          <div className="flex items-center gap-4">
-            <nav className="flex gap-4">
+          <>
+            <div className="d-flex align-items-center gap-2 ms-3">
               <button
                 onClick={() => handleNavigation('/')}
-                className={`btn btn-sm ${
+                className={`btn btn-sm py-0 px-2 ${
                   location.pathname === '/' 
                     ? 'btn-danger' 
                     : 'btn-outline-light'
@@ -51,7 +50,7 @@ const Header = () => {
               {user.role === 'admin' && (
                 <button
                   onClick={() => handleNavigation('/admin')}
-                  className={`btn btn-sm ${
+                  className={`btn btn-sm py-0 px-2 ${
                     location.pathname === '/admin' 
                       ? 'btn-danger' 
                       : 'btn-outline-light'
@@ -60,23 +59,20 @@ const Header = () => {
                   Admin
                 </button>
               )}
-            </nav>
+            </div>
             
-            <div className="text-end">
-              <div className="text-sm">
-                Logged in: <strong>{user.username}</strong>
-                <span className="ms-2 badge bg-danger">
-                  {user.role}
-                </span>
-              </div>
+            <div className="d-flex align-items-center ms-3">
+              <span className="text-light small me-2">
+                {user.username} <span className="badge bg-danger text-uppercase">{user.role}</span>
+              </span>
               <button
                 onClick={handleLogout}
-                className="btn btn-link btn-sm text-light p-0 mt-1"
+                className="btn btn-outline-light btn-sm py-0 px-2"
               >
                 Logout
               </button>
             </div>
-          </div>
+          </>
         )}
       </div>
     </header>

@@ -215,3 +215,23 @@ body {
 .stock-out {
   color: #dc3545;
 }
+
+/* Navbar compact styling */
+.navbar {
+  --bs-navbar-padding-y: .25rem;
+}
+
+.navbar .navbar-brand img {
+  width: 32px;
+  height: 32px;
+}
+
+.navbar-nav .nav-link {
+  padding: .25rem .5rem;
+}
+
+@media (max-width: 576px) {
+  .navbar .navbar-brand small {
+    display: none;
+  }
+}
