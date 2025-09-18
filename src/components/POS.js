@@ -14,6 +14,7 @@ const POS = () => {
   const [error, setError] = useState('');
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [recentOrders, setRecentOrders] = useState([]);
+  const [activeSection, setActiveSection] = useState('pos');
 
   useEffect(() => {
     loadMenu();
@@ -103,6 +104,202 @@ const POS = () => {
     }
   };
 
+  // Sidebar navigation items for staff dashboard
+  const sidebarItems = [
+    { id: 'pos', icon: 'fas fa-cash-register', label: 'Point of Sale' },
+    { id: 'orders', icon: 'fas fa-receipt', label: 'Recent Orders' },
+    { id: 'menu', icon: 'fas fa-utensils', label: 'Menu Items' },
+    { id: 'stats', icon: 'fas fa-chart-line', label: 'Quick Stats' }
+  ];
+
+  // Calculate quick stats for staff dashboard
+  const calculateStats = () => {
+    const todayOrders = recentOrders.filter(order => {
+      const orderDate = new Date(order.timestamp).toDateString();
+      const today = new Date().toDateString();
+      return orderDate === today;
+    });
+
+    const todayRevenue = todayOrders.reduce((sum, order) => sum + parseFloat(order.total || 0), 0);
+    const totalItems = recentOrders.reduce((sum, order) => sum + (order.items?.length || 0), 0);
+
+    return {
+      totalOrders: recentOrders.length,
+      todayOrders: todayOrders.length,
+      todayRevenue,
+      totalItems
+    };
+  };
+
+  const stats = calculateStats();
+
+  // Render different sections based on active selection
+  const renderPOSSection = () => (
+    <div className="row g-4">
+      {/* Menu Section */}
+      <div className="col-lg-8">
+        <div className="card pos-menu-card">
+          <div className="card-header bg-danger text-white">
+            <h5 className="mb-0">
+              <i className="fas fa-utensils me-2"></i>
+              Menu Items
+            </h5>
+          </div>
+          <div className="card-body p-0">
+            <div className="pos-menu-container p-3">
+              <MenuGrid menu={menu} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Cart Section */}
+      <div className="col-lg-4">
+        <div className="card pos-cart-card">
+          <div className="card-header bg-primary text-white">
+            <h5 className="mb-0">
+              <i className="fas fa-shopping-cart me-2"></i>
+              Current Order
+            </h5>
+          </div>
+          <div className="card-body p-0">
+            <Cart onConfirmOrder={handleConfirmOrder} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderRecentOrdersSection = () => (
+    <div className="card">
+      <div className="card-header bg-success text-white">
+        <h5 className="mb-0">
+          <i className="fas fa-clock me-2"></i>
+          Recent Orders
+        </h5>
+      </div>
+      <div className="card-body">
+        {recentOrders.length === 0 ? (
+          <div className="text-center text-muted py-5">
+            <i className="fas fa-receipt fa-3x text-muted mb-3"></i>
+            <h6>No recent orders</h6>
+            <p className="mb-0">Orders will appear here as they are created</p>
+          </div>
+        ) : (
+          <div className="row g-3">
+            {recentOrders.map((order) => (
+              <div key={order.id} className="col-md-6 col-lg-4">
+                <div className="card border">
+                  <div className="card-body">
+                    <div className="d-flex justify-content-between align-items-start mb-2">
+                      <h6 className="card-title mb-0">#{order.id.slice(-6)}</h6>
+                      <span className="badge bg-success">Completed</span>
+                    </div>
+                    <p className="text-muted small mb-2">
+                      {new Date(order.timestamp).toLocaleString()}
+                    </p>
+                    <div className="d-flex justify-content-between">
+                      <span className="text-muted">{order.items?.length || 0} items</span>
+                      <span className="fw-bold text-success">GHS {parseFloat(order.total || 0).toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderMenuSection = () => (
+    <div className="card">
+      <div className="card-header bg-warning text-white">
+        <h5 className="mb-0">
+          <i className="fas fa-utensils me-2"></i>
+          Menu Items Overview
+        </h5>
+      </div>
+      <div className="card-body">
+        <div className="row g-3">
+          {menu.map((item) => (
+            <div key={item.id} className="col-md-6 col-lg-4">
+              <div className="card border">
+                <div className="card-body">
+                  <h6 className="card-title">{item.name}</h6>
+                  <div className="d-flex justify-content-between align-items-center">
+                    <span className="text-success fw-bold">GHS {parseFloat(item.price || 0).toFixed(2)}</span>
+                    <span className={`badge ${item.stock <= 0 ? 'bg-danger' : item.stock <= 5 ? 'bg-warning' : 'bg-success'}`}>
+                      Stock: {item.stock}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderStatsSection = () => (
+    <div className="space-y-6">
+      <div className="row g-4 mb-4">
+        <div className="col-md-3">
+          <div className="bg-primary bg-opacity-10 border border-primary border-opacity-20 rounded-lg p-4 text-center">
+            <div className="text-3xl font-bold text-primary mb-1">{stats.totalOrders}</div>
+            <div className="text-sm text-muted">Total Orders</div>
+          </div>
+        </div>
+        <div className="col-md-3">
+          <div className="bg-success bg-opacity-10 border border-success border-opacity-20 rounded-lg p-4 text-center">
+            <div className="text-3xl font-bold text-success mb-1">{stats.todayOrders}</div>
+            <div className="text-sm text-muted">Today's Orders</div>
+          </div>
+        </div>
+        <div className="col-md-3">
+          <div className="bg-warning bg-opacity-10 border border-warning border-opacity-20 rounded-lg p-4 text-center">
+            <div className="text-3xl font-bold text-warning mb-1">GHS {stats.todayRevenue.toFixed(2)}</div>
+            <div className="text-sm text-muted">Today's Revenue</div>
+          </div>
+        </div>
+        <div className="col-md-3">
+          <div className="bg-danger bg-opacity-10 border border-danger border-opacity-20 rounded-lg p-4 text-center">
+            <div className="text-3xl font-bold text-danger mb-1">{stats.totalItems}</div>
+            <div className="text-sm text-muted">Items Sold</div>
+          </div>
+        </div>
+      </div>
+      
+      <div className="card">
+        <div className="card-header">
+          <h5 className="mb-0">Performance Overview</h5>
+        </div>
+        <div className="card-body">
+          <div className="text-center py-4">
+            <i className="fas fa-user-check fa-3x text-success mb-3"></i>
+            <h6>Logged in as: {user.username}</h6>
+            <p className="text-muted mb-0">Keep up the great work!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderContent = () => {
+    switch (activeSection) {
+      case 'orders':
+        return renderRecentOrdersSection();
+      case 'menu':
+        return renderMenuSection();
+      case 'stats':
+        return renderStatsSection();
+      case 'pos':
+      default:
+        return renderPOSSection();
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -129,102 +326,67 @@ const POS = () => {
   }
 
   return (
-    <div className="pos-layout fade-in">
-      {/* Header Section */}
-      <div className="pos-header mb-4">
-        <div className="d-flex justify-content-between align-items-center">
-          <div>
-            <h2 className="h4 mb-1 text-danger fw-bold">
-              <i className="fas fa-cash-register me-2"></i>
-              Point of Sale
-            </h2>
-            <p className="text-muted mb-0">Welcome back, {user.username}</p>
-          </div>
-          <div className="d-flex gap-2">
-            <button
-              onClick={loadMenu}
-              className="btn btn-outline-danger btn-sm"
-            >
-              <i className="fas fa-sync me-1"></i>
-              Refresh Menu
-            </button>
-          </div>
+    <div className="admin-layout d-flex fade-in">
+      {/* Sidebar */}
+      <div className="admin-sidebar bg-light border-end d-flex flex-column">
+        <div className="p-3 border-bottom">
+          <h5 className="mb-0 text-danger fw-bold">
+            <i className="fas fa-user me-2"></i>
+            Staff Dashboard
+          </h5>
+          <p className="text-muted mb-0 small">Welcome, {user.username}</p>
+        </div>
+        <nav className="flex-1">
+          <ul className="nav nav-pills flex-column p-3">
+            {sidebarItems.map((item) => (
+              <li key={item.id} className="nav-item mb-1">
+                <button
+                  className={`nav-link w-100 text-start d-flex align-items-center ${
+                    activeSection === item.id ? 'active' : 'text-muted'
+                  }`}
+                  onClick={() => setActiveSection(item.id)}
+                >
+                  <i className={`${item.icon} me-3`}></i>
+                  {item.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        
+        {/* Quick Actions */}
+        <div className="p-3 border-top">
+          <button
+            onClick={loadMenu}
+            className="btn btn-outline-danger btn-sm w-100"
+          >
+            <i className="fas fa-sync me-1"></i>
+            Refresh Menu
+          </button>
         </div>
       </div>
 
-      <div className="row g-4">
-        {/* Menu Section - Enhanced Grid Layout */}
-        <div className="col-lg-8">
-          <div className="card pos-menu-card">
-            <div className="card-header bg-danger text-white">
-              <h5 className="mb-0">
-                <i className="fas fa-utensils me-2"></i>
-                Menu Items
-              </h5>
-            </div>
-            <div className="card-body p-0">
-              <div className="pos-menu-container p-3">
-                <MenuGrid menu={menu} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Sidebar - Cart & Orders */}
-        <div className="col-lg-4">
-          <div className="pos-sidebar">
-            {/* Current Order/Cart */}
-            <div className="card mb-4 pos-cart-card">
-              <div className="card-header bg-primary text-white">
-                <h5 className="mb-0">
-                  <i className="fas fa-shopping-cart me-2"></i>
-                  Current Order
-                </h5>
-              </div>
-              <div className="card-body p-0">
-                <Cart onConfirmOrder={handleConfirmOrder} />
-              </div>
-            </div>
-            
-            {/* Recent Orders - Compact View */}
-            <div className="card pos-recent-orders">
-              <div className="card-header bg-success text-white">
-                <h6 className="mb-0">
-                  <i className="fas fa-clock me-2"></i>
-                  Recent Orders
-                </h6>
-              </div>
-              <div className="card-body" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                {recentOrders.length === 0 ? (
-                  <div className="text-center text-muted py-3">
-                    <i className="fas fa-receipt fa-2x text-muted mb-2"></i>
-                    <p className="mb-0 text-sm">No recent orders</p>
-                  </div>
-                ) : (
-                  <div className="d-flex flex-column gap-2">
-                    {recentOrders.map((order) => (
-                      <div key={order.id} className="border rounded p-2 bg-light">
-                        <div className="d-flex justify-content-between align-items-center">
-                          <div>
-                            <div className="fw-bold text-sm">#{order.id.slice(-6)}</div>
-                            <div className="text-xs text-muted">
-                              {new Date(order.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                            </div>
-                          </div>
-                          <div className="text-end">
-                            <div className="fw-bold text-success">GHS {parseFloat(order.total || 0).toFixed(2)}</div>
-                            <div className="text-xs text-muted">
-                              {order.items?.length || 0} items
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+      {/* Main Content */}
+      <div className="admin-content flex-1">
+        <div className="p-4">
+          {/* Header for current section */}
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <div>
+              <h3 className="mb-1">
+                <i className={`${sidebarItems.find(item => item.id === activeSection)?.icon || 'fas fa-dashboard'} me-2`}></i>
+                {sidebarItems.find(item => item.id === activeSection)?.label || 'Dashboard'}
+              </h3>
+              <p className="text-muted mb-0">
+                {activeSection === 'pos' && 'Create orders and manage transactions'}
+                {activeSection === 'orders' && 'View all recent order history'}
+                {activeSection === 'menu' && 'Browse available menu items'}
+                {activeSection === 'stats' && 'View performance statistics'}
+              </p>
             </div>
           </div>
+          
+          {/* Dynamic Content */}
+          {renderContent()}
         </div>
       </div>
 
