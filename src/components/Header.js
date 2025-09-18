@@ -17,119 +17,121 @@ const Header = () => {
   };
 
   return (
-    <header className="navbar navbar-expand-lg navbar-dark bg-gradient shadow-lg py-2 beautiful-navbar">
-      <div className="container-fluid">
-        {/* Brand/Logo Section */}
+    <header className="modern-navbar">
+      <div className="navbar-container">
+        {/* Brand Section */}
         <button 
-          className="navbar-brand d-flex align-items-center hover-lift border-0 bg-transparent" 
+          className="navbar-brand" 
           onClick={() => handleNavigation('/')}
           aria-label="Go to home"
         >
-          <div className="brand-icon-wrapper me-3">
+          <div className="brand-icon">
             <img 
               src="/icons/logo.png" 
               alt="Shawarma Boss Logo" 
               className="brand-logo"
             />
           </div>
-          <div className="brand-text">
-            <h1 className="brand-name mb-0">
-              <i className="fas fa-fire text-danger me-2"></i>
+          <div className="brand-content">
+            <h1 className="brand-title">
               Shawarma Boss
+              <span className="brand-badge">POS</span>
             </h1>
-            <small className="brand-tagline d-none d-lg-block">Modern Point of Sale System</small>
+            <p className="brand-subtitle d-none d-lg-block">Modern Point of Sale</p>
           </div>
         </button>
 
         {user && (
           <>
-            {/* Navigation Pills */}
-            <nav className="navbar-nav mx-auto" aria-label="Primary navigation">
-              <div className="nav-pills-container d-flex align-items-center gap-2">
+            {/* Navigation Tabs */}
+            <nav className="nav-tabs" aria-label="Primary navigation">
+              <div className="nav-tab-list">
                 <button
                   onClick={() => handleNavigation('/')}
-                  className={`nav-pill ${location.pathname === '/' ? 'active' : ''}`}
-                  title="Point of Sale"
+                  className={`nav-tab ${location.pathname === '/' ? 'active' : ''}`}
+                  title="Staff Dashboard"
                   aria-current={location.pathname === '/' ? 'page' : undefined}
                 >
-                  <i className="fas fa-cash-register me-2"></i>
-                  <span>POS</span>
+                  <div className="tab-icon">
+                    <i className="fas fa-cash-register"></i>
+                  </div>
+                  <span className="tab-label">Staff</span>
                 </button>
                 {user.role === 'admin' && (
                   <button
                     onClick={() => handleNavigation('/admin')}
-                    className={`nav-pill ${location.pathname === '/admin' ? 'active' : ''}`}
+                    className={`nav-tab ${location.pathname === '/admin' ? 'active' : ''}`}
                     title="Admin Dashboard"
                     aria-current={location.pathname === '/admin' ? 'page' : undefined}
                   >
-                    <i className="fas fa-cogs me-2"></i>
-                    <span>Admin</span>
+                    <div className="tab-icon">
+                      <i className="fas fa-shield-alt"></i>
+                    </div>
+                    <span className="tab-label">Admin</span>
                   </button>
                 )}
               </div>
             </nav>
             
-            {/* User Section */}
-            <div className="user-section d-flex align-items-center">
-              <div className="user-info me-3 text-end d-none d-md-block">
-                <div className="user-name text-white fw-semibold">
-                  <i className="fas fa-user-circle me-1"></i>
-                  {user.username}
+            {/* User Profile */}
+            <div className="user-profile">
+              <div className="user-info">
+                <div className="user-avatar">
+                  <i className="fas fa-user-circle"></i>
                 </div>
-                <span className={`role-badge ${user.role}`}>
-                  <i className={`fas ${user.role === 'admin' ? 'fa-crown' : 'fa-id-badge'} me-1`}></i>
-                  {user.role}
-                </span>
-              </div>
-              
-              <div className="action-buttons d-flex gap-2">
+                <div className="user-details d-none d-md-block">
+                  <div className="user-name">{user.username}</div>
+                  <div className={`user-role role-${user.role}`}>
+                    <i className={`fas ${user.role === 'admin' ? 'fa-crown' : 'fa-user'} me-1`}></i>
+                    {user.role}
+                  </div>
+                </div>
+                
                 <div className="dropdown">
                   <button 
-                    className="btn user-menu-btn dropdown-toggle d-md-none" 
+                    className="user-menu-btn" 
                     type="button" 
                     data-bs-toggle="dropdown" 
                     aria-expanded="false"
                     title="User Menu"
                   >
-                    <i className="fas fa-user"></i>
+                    <i className="fas fa-chevron-down"></i>
                   </button>
-                  <ul className="dropdown-menu dropdown-menu-end user-dropdown">
-                    <li>
-                      <h6 className="dropdown-header">
-                        <i className="fas fa-user-circle me-1"></i>
-                        {user.username}
-                      </h6>
-                    </li>
-                    <li>
-                      <span className="dropdown-item-text">
-                        <span className={`role-badge ${user.role}`}>
-                          <i className={`fas ${user.role === 'admin' ? 'fa-crown' : 'fa-id-badge'} me-1`}></i>
-                          {user.role}
-                        </span>
-                      </span>
+                  <ul className="dropdown-menu dropdown-menu-end modern-dropdown">
+                    <li className="dropdown-header">
+                      <div className="dropdown-user-info">
+                        <div className="dropdown-avatar">
+                          <i className="fas fa-user-circle"></i>
+                        </div>
+                        <div>
+                          <div className="dropdown-name">{user.username}</div>
+                          <div className={`dropdown-role role-${user.role}`}>
+                            <i className={`fas ${user.role === 'admin' ? 'fa-crown' : 'fa-user'} me-1`}></i>
+                            {user.role}
+                          </div>
+                        </div>
+                      </div>
                     </li>
                     <li><hr className="dropdown-divider" /></li>
                     <li>
-                      <button className="dropdown-item text-danger" onClick={handleLogout}>
-                        <i className="fas fa-sign-out-alt me-2"></i>
-                        Logout
+                      <button className="dropdown-item logout-item" onClick={handleLogout}>
+                        <div className="dropdown-item-content">
+                          <i className="fas fa-sign-out-alt"></i>
+                          <span>Sign Out</span>
+                        </div>
                       </button>
                     </li>
                   </ul>
                 </div>
-                
-                <button
-                  onClick={handleLogout}
-                  className="btn logout-btn d-none d-md-flex align-items-center"
-                  title="Logout"
-                >
-                  <i className="fas fa-sign-out-alt me-2"></i>
-                  <span className="d-none d-lg-inline">Logout</span>
-                </button>
               </div>
             </div>
           </>
         )}
+      </div>
+      
+      {/* Mobile PWA Install Indicator */}
+      <div className="pwa-indicator d-none">
+        <i className="fas fa-mobile-alt"></i>
       </div>
     </header>
   );
