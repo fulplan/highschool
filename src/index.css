@@ -1,3 +1,9 @@
+/* Import Bootstrap CSS */
+@import '~bootstrap/dist/css/bootstrap.min.css';
+
+/* Import Font Awesome CSS */
+@import '~@fortawesome/fontawesome-free/css/all.min.css';
+
 /* Modern CSS Reset and Base Styles */
 * {
   margin: 0;

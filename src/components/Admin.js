@@ -9,6 +9,7 @@ const Admin = () => {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [activeSection, setActiveSection] = useState('dashboard');
 
   // Form states
   const [newStaff, setNewStaff] = useState({ username: '', password: '', role: 'staff' });
@@ -51,10 +52,11 @@ const Admin = () => {
       await addStaff(newStaff);
       await loadAllData();
       setNewStaff({ username: '', password: '', role: 'staff' });
-      alert('Staff member added successfully!');
+      setSuccessMessage('Staff member added successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
       console.error('Error adding staff:', error);
-      alert('Failed to add staff member');
+      setError('Failed to add staff member');
     }
   };
 
@@ -170,6 +172,393 @@ const Admin = () => {
     };
   }, [orders]);
 
+  // Sidebar navigation items
+  const sidebarItems = [
+    { id: 'dashboard', icon: 'fas fa-tachometer-alt', label: 'Dashboard' },
+    { id: 'staff', icon: 'fas fa-users', label: 'Staff Management' },
+    { id: 'menu', icon: 'fas fa-utensils', label: 'Menu Management' },
+    { id: 'orders', icon: 'fas fa-receipt', label: 'Recent Orders' },
+    { id: 'reports', icon: 'fas fa-chart-bar', label: 'Reports & Export' }
+  ];
+
+  const renderDashboard = () => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-primary bg-opacity-10 border border-primary border-opacity-20 rounded-lg p-4 text-center">
+          <div className="text-3xl font-bold text-primary mb-1">{salesStats.totalOrders}</div>
+          <div className="text-sm text-muted">Total Orders</div>
+        </div>
+        <div className="bg-success bg-opacity-10 border border-success border-opacity-20 rounded-lg p-4 text-center">
+          <div className="text-3xl font-bold text-success mb-1">GHS {salesStats.totalSales.toFixed(2)}</div>
+          <div className="text-sm text-muted">Total Sales</div>
+        </div>
+        <div className="bg-warning bg-opacity-10 border border-warning border-opacity-20 rounded-lg p-4 text-center">
+          <div className="text-3xl font-bold text-warning mb-1">{salesStats.todayOrders}</div>
+          <div className="text-sm text-muted">Today's Orders</div>
+        </div>
+        <div className="bg-danger bg-opacity-10 border border-danger border-opacity-20 rounded-lg p-4 text-center">
+          <div className="text-3xl font-bold text-danger mb-1">GHS {salesStats.todaySales.toFixed(2)}</div>
+          <div className="text-sm text-muted">Today's Sales</div>
+        </div>
+      </div>
+      
+      {/* Staff Performance Overview */}
+      <div className="card">
+        <div className="card-header">
+          <h4 className="font-bold text-danger mb-0">Staff Performance</h4>
+        </div>
+        <div className="card-body">
+          <div className="row g-3">
+            {staff.map((member) => (
+              <div key={member.username} className="col-md-6 col-lg-4">
+                <div className="border rounded-lg p-3 bg-light">
+                  <div className="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div className="fw-bold">{member.username}</div>
+                      <div className="text-sm text-muted">{member.role}</div>
+                    </div>
+                    {salesStats.staffSales[member.username] && (
+                      <div className="text-end">
+                        <div className="fw-bold">{salesStats.staffSales[member.username].orders}</div>
+                        <div className="text-sm text-success">GHS {salesStats.staffSales[member.username].total.toFixed(2)}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Stock Alerts */}
+      <div className="card">
+        <div className="card-header">
+          <h4 className="font-bold text-danger mb-0">Stock Alerts</h4>
+        </div>
+        <div className="card-body">
+          {menu.filter(item => item.stock <= 5).length === 0 ? (
+            <div className="text-success text-center py-3">
+              <i className="fas fa-check-circle me-2"></i>
+              All items are well stocked
+            </div>
+          ) : (
+            <div className="row g-2">
+              {menu.filter(item => item.stock <= 5).map(item => (
+                <div key={item.id} className="col-md-6 col-lg-4">
+                  <div className={`alert ${item.stock === 0 ? 'alert-danger' : 'alert-warning'} mb-0`}>
+                    <strong>{item.name}</strong><br/>
+                    <small>{item.stock === 0 ? 'Out of stock' : `${item.stock} left`}</small>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderStaffManagement = () => (
+    <div className="row">
+      <div className="col-lg-8">
+        <div className="card">
+          <div className="card-header">
+            <h4 className="font-bold text-danger mb-0">Staff Members</h4>
+          </div>
+          <div className="card-body">
+            <div className="row g-3">
+              {staff.map((member) => (
+                <div key={member.username} className="col-md-6">
+                  <div className="border rounded-lg p-3 bg-light">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <div>
+                        <div className="fw-bold">{member.username}</div>
+                        <div className="text-sm text-muted">{member.role}</div>
+                      </div>
+                      {salesStats.staffSales[member.username] && (
+                        <div className="text-end">
+                          <div className="fw-bold">{salesStats.staffSales[member.username].orders} orders</div>
+                          <div className="text-success">GHS {salesStats.staffSales[member.username].total.toFixed(2)}</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div className="col-lg-4">
+        <div className="card">
+          <div className="card-header">
+            <h4 className="font-bold text-danger mb-0">Add New Staff</h4>
+          </div>
+          <div className="card-body">
+            <form onSubmit={handleAddStaff}>
+              <div className="mb-3">
+                <input
+                  type="text"
+                  placeholder="Username"
+                  value={newStaff.username}
+                  onChange={(e) => setNewStaff({...newStaff, username: e.target.value})}
+                  className="form-control"
+                />
+              </div>
+              <div className="mb-3">
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={newStaff.password}
+                  onChange={(e) => setNewStaff({...newStaff, password: e.target.value})}
+                  className="form-control"
+                />
+              </div>
+              <div className="mb-3">
+                <select
+                  value={newStaff.role}
+                  onChange={(e) => setNewStaff({...newStaff, role: e.target.value})}
+                  className="form-control"
+                >
+                  <option value="staff">Staff</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <button type="submit" className="btn btn-danger w-100">
+                <i className="fas fa-user-plus me-2"></i>
+                Add Staff
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderMenuManagement = () => (
+    <div className="row">
+      <div className="col-lg-8">
+        <div className="card">
+          <div className="card-header">
+            <h4 className="font-bold text-danger mb-0">Menu Items</h4>
+          </div>
+          <div className="card-body">
+            <div className="table-responsive">
+              <table className="table table-hover">
+                <thead className="table-light">
+                  <tr>
+                    <th>Item Name</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {menu.map((item) => (
+                    <tr key={item.id}>
+                      <td className="fw-medium">{item.name}</td>
+                      <td>GHS {parseFloat(item.price || 0).toFixed(2)}</td>
+                      <td>
+                        <div className="d-flex align-items-center gap-2">
+                          <input
+                            type="number"
+                            min="0"
+                            value={stockUpdates[item.id] !== undefined ? stockUpdates[item.id] : item.stock}
+                            onChange={(e) => handleStockChange(item.id, e.target.value)}
+                            className="form-control form-control-sm"
+                            style={{ width: '80px' }}
+                          />
+                          {stockUpdates[item.id] !== undefined && stockUpdates[item.id] != item.stock && (
+                            <button
+                              onClick={() => handleUpdateStock(item.id, stockUpdates[item.id])}
+                              className="btn btn-sm btn-primary"
+                            >
+                              Update
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`badge ${item.stock <= 0 ? 'bg-danger' : item.stock <= 5 ? 'bg-warning' : 'bg-success'}`}>
+                          {item.stock <= 0 ? 'Out of Stock' : item.stock <= 5 ? 'Low Stock' : 'In Stock'}
+                        </span>
+                      </td>
+                      <td>
+                        <button className="btn btn-sm btn-outline-primary me-2">
+                          <i className="fas fa-edit"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div className="col-lg-4">
+        <div className="card">
+          <div className="card-header">
+            <h4 className="font-bold text-danger mb-0">Add New Item</h4>
+          </div>
+          <div className="card-body">
+            <form onSubmit={handleAddMenuItem}>
+              <div className="mb-3">
+                <input
+                  type="text"
+                  placeholder="Item name"
+                  value={newMenuItem.name}
+                  onChange={(e) => setNewMenuItem({...newMenuItem, name: e.target.value})}
+                  className="form-control"
+                />
+              </div>
+              <div className="mb-3">
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="Price (GHS)"
+                  value={newMenuItem.price}
+                  onChange={(e) => setNewMenuItem({...newMenuItem, price: e.target.value})}
+                  className="form-control"
+                />
+              </div>
+              <div className="mb-3">
+                <input
+                  type="number"
+                  placeholder="Initial Stock"
+                  value={newMenuItem.stock}
+                  onChange={(e) => setNewMenuItem({...newMenuItem, stock: e.target.value})}
+                  className="form-control"
+                />
+              </div>
+              <button type="submit" className="btn btn-danger w-100">
+                <i className="fas fa-plus me-2"></i>
+                Add Item
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderRecentOrders = () => (
+    <div className="card">
+      <div className="card-header">
+        <h4 className="font-bold text-danger mb-0">Recent Orders</h4>
+      </div>
+      <div className="card-body">
+        <div className="table-responsive">
+          <table className="table table-hover">
+            <thead className="table-light">
+              <tr>
+                <th>Order ID</th>
+                <th>Staff</th>
+                <th>Date & Time</th>
+                <th>Total</th>
+                <th>Items</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.slice(0, 20).map((order) => (
+                <tr key={order.id}>
+                  <td className="font-mono">#{order.id.slice(-8)}</td>
+                  <td>{order.staff}</td>
+                  <td>{new Date(order.timestamp).toLocaleString()}</td>
+                  <td className="fw-bold text-success">GHS {parseFloat(order.total || 0).toFixed(2)}</td>
+                  <td className="text-sm">
+                    {order.payload?.items?.slice(0, 2).map(item => item.name).join(', ')}
+                    {order.payload?.items?.length > 2 && '...'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {orders.length === 0 && (
+            <div className="text-center py-4 text-muted">No orders yet</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderReportsExport = () => (
+    <div className="row">
+      <div className="col-lg-6">
+        <div className="card mb-4">
+          <div className="card-header">
+            <h4 className="font-bold text-danger mb-0">Export Options</h4>
+          </div>
+          <div className="card-body">
+            <div className="d-grid gap-2">
+              <button onClick={exportData} className="btn btn-outline-danger">
+                <i className="fas fa-download me-2"></i>
+                Export JSON Data
+              </button>
+              <button onClick={exportCSV} className="btn btn-outline-danger">
+                <i className="fas fa-file-csv me-2"></i>
+                Export Orders CSV
+              </button>
+              <button onClick={loadAllData} className="btn btn-outline-danger">
+                <i className="fas fa-sync-alt me-2"></i>
+                Refresh All Data
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div className="col-lg-6">
+        <div className="card">
+          <div className="card-header">
+            <h4 className="font-bold text-danger mb-0">Quick Stats</h4>
+          </div>
+          <div className="card-body">
+            <div className="row text-center">
+              <div className="col-6 mb-3">
+                <div className="h4 text-primary mb-0">{menu.length}</div>
+                <small className="text-muted">Menu Items</small>
+              </div>
+              <div className="col-6 mb-3">
+                <div className="h4 text-warning mb-0">{staff.length}</div>
+                <small className="text-muted">Staff Members</small>
+              </div>
+              <div className="col-6">
+                <div className="h4 text-info mb-0">{menu.filter(item => item.stock <= 5).length}</div>
+                <small className="text-muted">Low Stock Items</small>
+              </div>
+              <div className="col-6">
+                <div className="h4 text-success mb-0">{salesStats.todayOrders}</div>
+                <small className="text-muted">Today's Orders</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderContent = () => {
+    switch (activeSection) {
+      case 'dashboard':
+        return renderDashboard();
+      case 'staff':
+        return renderStaffManagement();
+      case 'menu':
+        return renderMenuManagement();
+      case 'orders':
+        return renderRecentOrders();
+      case 'reports':
+        return renderReportsExport();
+      default:
+        return renderDashboard();
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -193,253 +582,52 @@ const Admin = () => {
   }
 
   return (
-    <div className="fade-in">
-      {/* Success/Error Messages */}
-      {successMessage && (
-        <div className="alert alert-success alert-dismissible fade show mb-4" role="alert">
-          <i className="fas fa-check-circle me-2"></i>{successMessage}
-          <button type="button" className="btn-close" onClick={() => setSuccessMessage('')}></button>
+    <div className="admin-layout d-flex">
+      {/* Sidebar */}
+      <div className="admin-sidebar bg-light border-end d-flex flex-column">
+        <div className="p-3 border-bottom">
+          <h5 className="mb-0 text-danger fw-bold">
+            <i className="fas fa-cog me-2"></i>
+            Admin Panel
+          </h5>
         </div>
-      )}
-      {error && (
-        <div className="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-          <i className="fas fa-exclamation-triangle me-2"></i>{error}
-          <button type="button" className="btn-close" onClick={() => setError('')}></button>
-        </div>
-      )}
-
-      <div className="card mb-4">
-        <div className="card-header">
-          <h3 className="h4 fw-bold text-danger mb-0">
-            <i className="fas fa-tachometer-alt me-2"></i>Admin Dashboard
-          </h3>
-        </div>
-        <div className="card-body">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="text-center p-4 bg-info bg-opacity-10 rounded">
-              <div className="text-2xl font-bold text-info">{salesStats.totalOrders}</div>
-              <div className="text-sm text-muted">Total Orders</div>
-            </div>
-            <div className="text-center p-4 bg-success bg-opacity-10 rounded">
-              <div className="text-2xl font-bold text-success">GHS {salesStats.totalSales.toFixed(2)}</div>
-              <div className="text-sm text-muted">Total Sales</div>
-            </div>
-            <div className="text-center p-4 bg-warning bg-opacity-10 rounded">
-              <div className="text-2xl font-bold text-warning">{salesStats.todayOrders}</div>
-              <div className="text-sm text-muted">Today's Orders</div>
-            </div>
-            <div className="text-center p-4 bg-danger bg-opacity-10 rounded">
-              <div className="text-2xl font-bold text-danger">GHS {salesStats.todaySales.toFixed(2)}</div>
-              <div className="text-sm text-muted">Today's Sales</div>
-            </div>
-          </div>
-        </div>
+        <nav className="flex-1">
+          <ul className="nav nav-pills flex-column p-3">
+            {sidebarItems.map((item) => (
+              <li key={item.id} className="nav-item mb-1">
+                <button
+                  className={`nav-link w-100 text-start d-flex align-items-center ${
+                    activeSection === item.id ? 'active' : 'text-muted'
+                  }`}
+                  onClick={() => setActiveSection(item.id)}
+                >
+                  <i className={`${item.icon} me-3`}></i>
+                  {item.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </div>
 
-      <div className="row g-4 mb-4">
-        {/* Staff Management */}
-        <div className="col-lg-4">
-          <div className="card h-100">
-          <div className="card-header">
-            <h4 className="font-bold text-danger">Staff Management</h4>
-          </div>
-          <div className="card-body">
-            <div className="space-y-2 mb-4">
-              {staff.map((member) => (
-                <div key={member.username} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                  <div>
-                    <div className="font-medium">{member.username}</div>
-                    <div className="text-sm text-muted">{member.role}</div>
-                  </div>
-                  {salesStats.staffSales[member.username] && (
-                    <div className="text-right text-sm">
-                      <div>{salesStats.staffSales[member.username].orders} orders</div>
-                      <div className="text-success">GHS {salesStats.staffSales[member.username].total.toFixed(2)}</div>
-                    </div>
-                  )}
-                </div>
-              ))}
+      {/* Main Content */}
+      <div className="admin-content flex-1">
+        <div className="p-4">
+          {/* Success/Error Messages */}
+          {successMessage && (
+            <div className="alert alert-success alert-dismissible fade show mb-4" role="alert">
+              <i className="fas fa-check-circle me-2"></i>{successMessage}
+              <button type="button" className="btn-close" onClick={() => setSuccessMessage('')}></button>
             </div>
-
-            <form onSubmit={handleAddStaff} className="space-y-2">
-              <input
-                type="text"
-                placeholder="Username"
-                value={newStaff.username}
-                onChange={(e) => setNewStaff({...newStaff, username: e.target.value})}
-                className="form-control"
-              />
-              <input
-                type="password"
-                placeholder="Password"
-                value={newStaff.password}
-                onChange={(e) => setNewStaff({...newStaff, password: e.target.value})}
-                className="form-control"
-              />
-              <select
-                value={newStaff.role}
-                onChange={(e) => setNewStaff({...newStaff, role: e.target.value})}
-                className="form-control"
-              >
-                <option value="staff">Staff</option>
-                <option value="admin">Admin</option>
-              </select>
-              <button type="submit" className="btn btn-danger w-full">
-                Add Staff
-              </button>
-            </form>
-          </div>
-        </div>
-
-        </div>
-        </div>
-
-        {/* Menu Management */}
-        <div className="col-lg-4">
-          <div className="card h-100">
-          <div className="card-header">
-            <h4 className="font-bold text-danger">Menu Management</h4>
-          </div>
-          <div className="card-body">
-            <div className="d-flex flex-column gap-2 mb-4" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-              {menu.map((item) => (
-                <div key={item.id} className="d-flex justify-content-between align-items-center p-2 bg-light rounded border">
-                  <div className="flex-grow-1">
-                    <div className="fw-medium">{item.name}</div>
-                    <div className="text-sm text-muted">GHS {parseFloat(item.price || 0).toFixed(2)}</div>
-                  </div>
-                  <div className="d-flex align-items-center gap-2">
-                    <input
-                      type="number"
-                      min="0"
-                      value={stockUpdates[item.id] !== undefined ? stockUpdates[item.id] : item.stock}
-                      onChange={(e) => handleStockChange(item.id, e.target.value)}
-                      className="form-control form-control-sm"
-                      style={{ width: '70px' }}
-                    />
-                    {stockUpdates[item.id] !== undefined && stockUpdates[item.id] != item.stock && (
-                      <button
-                        onClick={() => handleUpdateStock(item.id, stockUpdates[item.id])}
-                        className="btn btn-sm btn-primary"
-                      >
-                        Update
-                      </button>
-                    )}
-                    <span className={`badge ${item.stock <= 5 ? 'bg-danger' : 'bg-success'}`}>
-                      {item.stock <= 0 ? 'Out' : item.stock <= 5 ? 'Low' : 'OK'}
-                    </span>
-                  </div>
-                </div>
-              ))}
+          )}
+          {error && (
+            <div className="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+              <i className="fas fa-exclamation-triangle me-2"></i>{error}
+              <button type="button" className="btn-close" onClick={() => setError('')}></button>
             </div>
-
-            <form onSubmit={handleAddMenuItem} className="space-y-2">
-              <input
-                type="text"
-                placeholder="Item name"
-                value={newMenuItem.name}
-                onChange={(e) => setNewMenuItem({...newMenuItem, name: e.target.value})}
-                className="form-control"
-              />
-              <input
-                type="number"
-                step="0.01"
-                placeholder="Price"
-                value={newMenuItem.price}
-                onChange={(e) => setNewMenuItem({...newMenuItem, price: e.target.value})}
-                className="form-control"
-              />
-              <input
-                type="number"
-                placeholder="Stock"
-                value={newMenuItem.stock}
-                onChange={(e) => setNewMenuItem({...newMenuItem, stock: e.target.value})}
-                className="form-control"
-              />
-              <button type="submit" className="btn btn-danger w-full">
-                Add Item
-              </button>
-            </form>
-          </div>
-        </div>
-        </div>
-
-        {/* Export & Reports */}
-        <div className="col-lg-4">
-          <div className="card h-100">
-          <div className="card-header">
-            <h4 className="font-bold text-danger">Export & Reports</h4>
-          </div>
-          <div className="card-body">
-            <div className="space-y-2 mb-4">
-              <button onClick={exportData} className="btn btn-outline-danger w-full">
-                Export JSON Data
-              </button>
-              <button onClick={exportCSV} className="btn btn-outline-danger w-full">
-                Export Orders CSV
-              </button>
-              <button onClick={loadAllData} className="btn btn-outline-danger w-full">
-                Refresh Data
-              </button>
-            </div>
-
-            {/* Stock Alerts */}
-            <div>
-              <h5 className="font-bold mb-2 text-sm">Stock Alerts</h5>
-              <div className="space-y-1">
-                {menu
-                  .filter(item => item.stock <= 5)
-                  .map(item => (
-                    <div key={item.id} className="text-sm text-danger">
-                      {item.name}: {item.stock === 0 ? 'Out of stock' : `${item.stock} left`}
-                    </div>
-                  ))
-                }
-                {menu.filter(item => item.stock <= 5).length === 0 && (
-                  <div className="text-sm text-success">All items well stocked</div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Orders Table */}
-      <div className="card">
-        <div className="card-header">
-          <h4 className="font-bold text-danger">Recent Orders</h4>
-        </div>
-        <div className="card-body">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-2">Order ID</th>
-                  <th className="text-left p-2">Staff</th>
-                  <th className="text-left p-2">Date</th>
-                  <th className="text-right p-2">Total</th>
-                  <th className="text-left p-2">Items</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.slice(0, 10).map((order) => (
-                  <tr key={order.id} className="border-b">
-                    <td className="p-2 font-mono">#{order.id.slice(-8)}</td>
-                    <td className="p-2">{order.staff}</td>
-                    <td className="p-2">{new Date(order.timestamp).toLocaleDateString()}</td>
-                    <td className="p-2 text-right font-bold">GHS {parseFloat(order.total || 0).toFixed(2)}</td>
-                    <td className="p-2 text-xs">
-                      {order.payload?.items?.slice(0, 2).map(item => item.name).join(', ')}
-                      {order.payload?.items?.length > 2 && '...'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {orders.length === 0 && (
-              <div className="text-center py-4 text-muted">No orders yet</div>
-            )}
-          </div>
+          )}
+          
+          {renderContent()}
         </div>
       </div>
     </div>

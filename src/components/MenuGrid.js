@@ -27,57 +27,82 @@ const MenuGrid = ({ menu }) => {
   };
 
   const getStockStatus = (stock) => {
-    if (stock === 0) return { text: 'Out of Stock', class: 'stock-out' };
-    if (stock <= 5) return { text: `Low Stock (${stock})`, class: 'stock-low' };
-    return { text: `In Stock (${stock})`, class: 'text-success' };
+    if (stock === 0) return { text: 'Out of Stock', class: 'stock-out text-danger' };
+    if (stock <= 5) return { text: `Low Stock (${stock})`, class: 'stock-low text-warning' };
+    return { text: `In Stock (${stock})`, class: 'stock-good text-success' };
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="pos-menu-grid">
       {menu.map((item) => {
         const stockStatus = getStockStatus(item.stock);
         const quantity = quantities[item.id] || 1;
         
         return (
-          <div key={item.id} className="card menu-card">
-            <div className="card-body">
-              <div className="flex justify-between items-start mb-2">
-                <h5 className="font-bold text-lg">{item.name}</h5>
-                <span className="text-danger font-bold text-lg">
-                  GHS {parseFloat(item.price || 0).toFixed(2)}
-                </span>
-              </div>
-              
-              <div className={`text-sm mb-3 ${stockStatus.class}`}>
-                {stockStatus.text}
-              </div>
-              
-              <div className="flex gap-2 items-center">
+          <div key={item.id} className="menu-item-card">
+            <div className="menu-item-header">
+              <h5 className="menu-item-name">{item.name}</h5>
+              <span className="menu-item-price">
+                GHS {parseFloat(item.price || 0).toFixed(2)}
+              </span>
+            </div>
+            
+            <div className={`menu-item-stock ${stockStatus.class}`}>
+              <i className={`fas ${
+                item.stock === 0 ? 'fa-times-circle' : 
+                item.stock <= 5 ? 'fa-exclamation-triangle' : 
+                'fa-check-circle'
+              } me-1`}></i>
+              {stockStatus.text}
+            </div>
+            
+            <div className="menu-item-actions">
+              <div className="quantity-selector">
+                <button 
+                  className="btn btn-outline-secondary btn-sm qty-btn"
+                  onClick={() => handleQuantityChange(item.id, Math.max(1, quantity - 1))}
+                  disabled={item.stock === 0 || quantity <= 1}
+                >
+                  <i className="fas fa-minus"></i>
+                </button>
                 <input
                   type="number"
                   min="1"
                   max={item.stock}
                   value={quantity}
                   onChange={(e) => handleQuantityChange(item.id, e.target.value)}
-                  className="form-control w-20 text-center"
+                  className="form-control form-control-sm qty-input"
                   disabled={item.stock === 0}
                 />
-                <button
-                  onClick={() => handleAddToCart(item)}
-                  disabled={item.stock === 0}
-                  className="btn btn-danger flex-1"
+                <button 
+                  className="btn btn-outline-secondary btn-sm qty-btn"
+                  onClick={() => handleQuantityChange(item.id, Math.min(item.stock, quantity + 1))}
+                  disabled={item.stock === 0 || quantity >= item.stock}
                 >
-                  {item.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+                  <i className="fas fa-plus"></i>
                 </button>
               </div>
+              <button
+                onClick={() => handleAddToCart(item)}
+                disabled={item.stock === 0}
+                className={`btn add-to-cart-btn ${
+                  item.stock === 0 ? 'btn-secondary' : 'btn-danger'
+                }`}
+              >
+                <i className={`fas ${
+                  item.stock === 0 ? 'fa-ban' : 'fa-cart-plus'
+                } me-1`}></i>
+                {item.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+              </button>
             </div>
           </div>
         );
       })}
       
       {menu.length === 0 && (
-        <div className="col-span-full text-center py-8 text-muted">
-          No menu items available
+        <div className="no-menu-items">
+          <i className="fas fa-utensils fa-3x text-muted mb-3"></i>
+          <p className="text-muted mb-0">No menu items available</p>
         </div>
       )}
     </div>
