@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../services/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -6,6 +6,34 @@ const Header = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  // Simulated notification system (can be replaced with real-time notifications)
+  useEffect(() => {
+    // Mock notifications for demo purposes
+    const mockNotifications = [
+      { id: 1, type: 'order', message: 'New order #1234 received', time: '2 min ago', read: false },
+      { id: 2, type: 'system', message: 'Daily backup completed', time: '1 hour ago', read: true },
+      { id: 3, type: 'inventory', message: 'Low stock alert: Chicken Shawarma', time: '3 hours ago', read: false },
+    ];
+    setNotifications(mockNotifications);
+    setUnreadCount(mockNotifications.filter(n => !n.read).length);
+  }, []);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showNotifications && !event.target.closest('.notification-wrapper')) {
+        setShowNotifications(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showNotifications]);
 
   const handleLogout = () => {
     logout();
@@ -14,11 +42,46 @@ const Header = () => {
 
   const handleNavigation = (path) => {
     navigate(path);
+    setIsMobileMenuOpen(false); // Close mobile menu when navigating
+  };
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const toggleNotifications = () => {
+    setShowNotifications(!showNotifications);
+  };
+
+  const markAllAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setUnreadCount(0);
+  };
+
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case 'order': return 'fas fa-shopping-cart';
+      case 'system': return 'fas fa-cog';
+      case 'inventory': return 'fas fa-exclamation-triangle';
+      default: return 'fas fa-bell';
+    }
   };
 
   return (
     <header className="modern-navbar">
       <div className="navbar-container">
+        {/* Mobile Hamburger Menu */}
+        {user && (
+          <button 
+            className="mobile-menu-toggle d-md-none"
+            onClick={toggleMobileMenu}
+            aria-label="Toggle mobile menu"
+            aria-expanded={isMobileMenuOpen}
+          >
+            <i className={`fas ${isMobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
+          </button>
+        )}
+
         {/* Brand Section */}
         <button 
           className="navbar-brand" 
@@ -43,8 +106,8 @@ const Header = () => {
 
         {user && (
           <>
-            {/* Navigation Tabs */}
-            <nav className="nav-tabs" aria-label="Primary navigation">
+            {/* Desktop Navigation Tabs */}
+            <nav className="nav-tabs d-none d-md-flex" aria-label="Primary navigation">
               <div className="nav-tab-list">
                 <button
                   onClick={() => handleNavigation('/')}
@@ -73,66 +136,168 @@ const Header = () => {
               </div>
             </nav>
             
-            {/* User Profile */}
-            <div className="user-profile">
-              <div className="user-info">
-                <div className="user-avatar">
-                  <i className="fas fa-user-circle"></i>
-                </div>
-                <div className="user-details d-none d-md-block">
-                  <div className="user-name">{user.username}</div>
-                  <div className={`user-role role-${user.role}`}>
-                    <i className={`fas ${user.role === 'admin' ? 'fa-crown' : 'fa-user'} me-1`}></i>
-                    {user.role}
-                  </div>
-                </div>
+            {/* Right Side Actions */}
+            <div className="navbar-actions">
+              {/* Notifications */}
+              <div className="notification-wrapper">
+                <button
+                  className="notification-btn"
+                  onClick={toggleNotifications}
+                  title="Notifications"
+                  aria-label="Show notifications"
+                >
+                  <i className="fas fa-bell"></i>
+                  {unreadCount > 0 && (
+                    <span className="notification-badge">{unreadCount}</span>
+                  )}
+                </button>
                 
-                <div className="dropdown">
-                  <button 
-                    className="user-menu-btn" 
-                    type="button" 
-                    data-bs-toggle="dropdown" 
-                    aria-expanded="false"
-                    title="User Menu"
-                  >
-                    <i className="fas fa-chevron-down"></i>
-                  </button>
-                  <ul className="dropdown-menu dropdown-menu-end modern-dropdown">
-                    <li className="dropdown-header">
-                      <div className="dropdown-user-info">
-                        <div className="dropdown-avatar">
-                          <i className="fas fa-user-circle"></i>
+                {/* Notification Dropdown */}
+                {showNotifications && (
+                  <div className="notification-dropdown">
+                    <div className="notification-header">
+                      <h6>Notifications</h6>
+                      {unreadCount > 0 && (
+                        <button 
+                          className="mark-read-btn"
+                          onClick={markAllAsRead}
+                        >
+                          Mark all as read
+                        </button>
+                      )}
+                    </div>
+                    <div className="notification-list">
+                      {notifications.length === 0 ? (
+                        <div className="notification-empty">
+                          <i className="fas fa-bell-slash"></i>
+                          <p>No notifications yet</p>
                         </div>
-                        <div>
-                          <div className="dropdown-name">{user.username}</div>
-                          <div className={`dropdown-role role-${user.role}`}>
-                            <i className={`fas ${user.role === 'admin' ? 'fa-crown' : 'fa-user'} me-1`}></i>
-                            {user.role}
+                      ) : (
+                        notifications.map(notification => (
+                          <div 
+                            key={notification.id} 
+                            className={`notification-item ${!notification.read ? 'unread' : ''}`}
+                          >
+                            <div className="notification-icon">
+                              <i className={getNotificationIcon(notification.type)}></i>
+                            </div>
+                            <div className="notification-content">
+                              <p className="notification-message">{notification.message}</p>
+                              <span className="notification-time">{notification.time}</span>
+                            </div>
+                            {!notification.read && <div className="unread-dot"></div>}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* User Profile */}
+              <div className="user-profile">
+                <div className="user-info">
+                  <div className="user-avatar">
+                    <i className="fas fa-user-circle"></i>
+                  </div>
+                  <div className="user-details d-none d-lg-block">
+                    <div className="user-name">{user.username}</div>
+                    <div className={`user-role role-${user.role}`}>
+                      <i className={`fas ${user.role === 'admin' ? 'fa-crown' : 'fa-user'} me-1`}></i>
+                      {user.role}
+                    </div>
+                  </div>
+                  
+                  <div className="dropdown">
+                    <button 
+                      className="user-menu-btn" 
+                      type="button" 
+                      data-bs-toggle="dropdown" 
+                      aria-expanded="false"
+                      title="User Menu"
+                    >
+                      <i className="fas fa-chevron-down d-none d-md-inline"></i>
+                      <i className="fas fa-ellipsis-v d-md-none"></i>
+                    </button>
+                    <ul className="dropdown-menu dropdown-menu-end modern-dropdown">
+                      <li className="dropdown-header">
+                        <div className="dropdown-user-info">
+                          <div className="dropdown-avatar">
+                            <i className="fas fa-user-circle"></i>
+                          </div>
+                          <div>
+                            <div className="dropdown-name">{user.username}</div>
+                            <div className={`dropdown-role role-${user.role}`}>
+                              <i className={`fas ${user.role === 'admin' ? 'fa-crown' : 'fa-user'} me-1`}></i>
+                              {user.role}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </li>
-                    <li><hr className="dropdown-divider" /></li>
-                    <li>
-                      <button className="dropdown-item logout-item" onClick={handleLogout}>
-                        <div className="dropdown-item-content">
-                          <i className="fas fa-sign-out-alt"></i>
-                          <span>Sign Out</span>
-                        </div>
-                      </button>
-                    </li>
-                  </ul>
+                      </li>
+                      <li><hr className="dropdown-divider" /></li>
+                      <li>
+                        <button className="dropdown-item logout-item" onClick={handleLogout}>
+                          <div className="dropdown-item-content">
+                            <i className="fas fa-sign-out-alt"></i>
+                            <span>Sign Out</span>
+                          </div>
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>
           </>
         )}
       </div>
+
+      {/* Mobile Navigation Menu */}
+      {user && (
+        <div className={`mobile-nav-menu ${isMobileMenuOpen ? 'open' : ''}`}>
+          <div className="mobile-nav-header">
+            <div className="mobile-user-info">
+              <div className="mobile-avatar">
+                <i className="fas fa-user-circle"></i>
+              </div>
+              <div className="mobile-user-details">
+                <div className="mobile-user-name">{user.username}</div>
+                <div className={`mobile-user-role role-${user.role}`}>
+                  <i className={`fas ${user.role === 'admin' ? 'fa-crown' : 'fa-user'} me-1`}></i>
+                  {user.role}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <nav className="mobile-nav-list">
+            <button
+              onClick={() => handleNavigation('/')}
+              className={`mobile-nav-item ${location.pathname === '/' ? 'active' : ''}`}
+            >
+              <i className="fas fa-cash-register"></i>
+              <span>Staff Dashboard</span>
+            </button>
+            {user.role === 'admin' && (
+              <button
+                onClick={() => handleNavigation('/admin')}
+                className={`mobile-nav-item ${location.pathname === '/admin' ? 'active' : ''}`}
+              >
+                <i className="fas fa-shield-alt"></i>
+                <span>Admin Dashboard</span>
+              </button>
+            )}
+            <div className="mobile-nav-divider"></div>
+            <button className="mobile-nav-item logout" onClick={handleLogout}>
+              <i className="fas fa-sign-out-alt"></i>
+              <span>Sign Out</span>
+            </button>
+          </nav>
+        </div>
+      )}
       
-      {/* Mobile PWA Install Indicator */}
-      <div className="pwa-indicator d-none">
-        <i className="fas fa-mobile-alt"></i>
-      </div>
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && <div className="mobile-menu-overlay" onClick={toggleMobileMenu}></div>}
     </header>
   );
 };
