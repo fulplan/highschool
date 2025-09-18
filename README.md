@@ -1,6 +1,6 @@
-# Shawarma Boss POS - MERN Stack
+# Shawarma Boss POS - PERN Stack
 
-A modern, full-stack Point of Sale (POS) system built with the MERN stack (MongoDB/PostgreSQL, Express.js, React, Node.js). Originally a vanilla JavaScript PWA, now transformed into a powerful, scalable web application.
+A modern, full-stack Point of Sale (POS) system built with the PERN stack (PostgreSQL, Express.js, React, Node.js). Originally a vanilla JavaScript PWA, now transformed into a powerful, scalable web application optimized for cloud deployment on Replit.
 
 ## 🚀 Features
 
@@ -51,47 +51,60 @@ A modern, full-stack Point of Sale (POS) system built with the MERN stack (Mongo
 
 ## 📋 Prerequisites
 
+### For Local Development
 - Node.js 18+ 
 - PostgreSQL 12+
 - npm or yarn
 
+### For Replit (Recommended)
+- No local installations required - add a PostgreSQL database via the Database tab
+
 ## 🚀 Quick Start
 
-### 1. Clone and Install Dependencies
+### Option A: Replit (Recommended)
+
+1. **Fork this repository** on Replit or import from GitHub
+2. **Add PostgreSQL Database**: Use the "Database" tab in Replit to add a PostgreSQL database (automatically sets DATABASE_URL)
+3. **Install dependencies**: Dependencies will be automatically installed on first run
+4. **Click Run** - The application will build and start automatically
+5. **Access the app** via the Replit webview
+
+**Note**: The PostgreSQL database and tables will be automatically created and seeded with default data on first run.
+
+### Option B: Local Development
+
+#### 1. Clone and Install Dependencies
 
 ```bash
+# Clone the repository
+git clone <repository-url>
+cd shawarma-boss-mern
+
 # Install dependencies
 npm install
 ```
 
-### 2. Database Setup
+#### 2. Database Setup
 
-#### Option A: Local PostgreSQL
 ```bash
 # Create database
 createdb shawarma_boss
 
-# Copy environment file
-cp .env.example .env
-
-# Edit .env with your PostgreSQL credentials
-PGHOST=localhost
+# Copy environment file (create .env file)
+echo "PGHOST=localhost
 PGPORT=5432
 PGUSER=postgres
 PGPASSWORD=your_password
-PGDATABASE=shawarma_boss
+PGDATABASE=shawarma_boss" > .env
 ```
 
-#### Option B: Replit PostgreSQL
-If you're using Replit, the PostgreSQL database will be automatically configured. No additional setup required.
-
-### 3. Start the Application
+#### 3. Start the Application
 
 ```bash
-# Development mode (builds React app and starts server)
+# Production mode (builds React app and starts server)
 npm start
 
-# Development with hot reload
+# Development mode (for development only)
 npm run dev
 
 # Build production assets only
@@ -111,21 +124,24 @@ shawarma-boss-mern/
 │   │   ├── Admin.js       # Admin dashboard
 │   │   ├── Header.js      # Navigation header
 │   │   ├── Cart.js        # Shopping cart
-│   │   └── MenuGrid.js    # Menu display
+│   │   ├── MenuGrid.js    # Menu display
+│   │   └── OrderModal.js  # Order receipt modal
 │   ├── services/          # API and state management
 │   │   ├── api.js         # API client
 │   │   ├── AuthContext.js # Authentication context
 │   │   └── CartContext.js # Cart state management
 │   ├── App.js             # Main React component
-│   └── index.js           # React entry point
+│   ├── App.css            # Application styles
+│   ├── index.js           # React entry point
+│   └── index.css          # Global styles and utilities
 ├── public/                # Static assets
 │   └── index.html         # HTML template
-├── dist/                  # Built React application
-├── icons/                 # Application icons
-├── server.js              # Express.js server
+├── dist/                  # Built React application (auto-generated)
+├── icons/                 # Application icons and logo
+├── server.js              # Unified Express.js server (frontend + API)
 ├── webpack.config.js      # Webpack configuration
-├── .babelrc              # Babel configuration
-├── package.json          # Dependencies and scripts
+├── package.json           # Dependencies and scripts
+├── replit.md             # Project documentation and architecture
 └── README.md             # This file
 ```
 
@@ -199,36 +215,55 @@ CREATE TABLE orders (
 
 ## 🚀 Deployment
 
-### Replit Deployment
-This application is configured for easy deployment on Replit:
+### Replit Deployment (Recommended)
+This application is fully optimized for Replit deployment:
 
-1. The deployment is configured to use `autoscale` target
-2. Build command: `npm run build`
-3. Run command: `node server.js`
-4. PostgreSQL database is automatically configured
+1. **Database Setup**: Add PostgreSQL database via Replit's Database tab (sets DATABASE_URL automatically)
+2. **One-Click Deploy**: Use the "Deploy" button in Replit for instant production deployment
+3. **Autoscale Configuration**: Configure autoscale target in Replit's Deploy settings for automatic scaling
+4. **Build Process**: `npm run build` → `node server.js`
+5. **CORS Enabled**: Properly configured for Replit's proxy environment
 
-### Production Environment Variables
+### Manual Deployment
+For other platforms, ensure the following environment variables are set:
+
 ```bash
 NODE_ENV=production
 DATABASE_URL=your_postgresql_connection_string
 PORT=5000
+PGHOST=your_host
+PGPORT=5432
+PGUSER=your_user
+PGPASSWORD=your_password
+PGDATABASE=your_database
 ```
 
 ## 🔧 Development
 
 ### Available Scripts
 
-- `npm start` - Build and start production server
-- `npm run dev` - Start development server
+- `npm start` - Build and start production server (used by Replit)
+- `npm run dev` - Start development server (development only)
 - `npm run build` - Build React app for production
 - `npm run build:dev` - Build React app for development
 
 ### Development Workflow
 
+#### On Replit (Recommended)
+1. Make changes to React components in `src/` or backend in `server.js`
+2. The app automatically rebuilds and restarts
+3. View changes instantly in the Replit webview
+
+#### Local Development
 1. Start the development server: `npm run dev`
 2. Make changes to React components in `src/`
 3. The build process automatically rebuilds the app
 4. Server restarts automatically on backend changes
+
+### Important Notes
+- **Price Handling**: All price values from PostgreSQL are strings and must be converted with `parseFloat()` before using `.toFixed()`
+- **CORS**: Application is configured to work with Replit's proxy environment
+- **Database**: Automatic table creation and seeding on first run
 
 ## 📊 Features in Detail
 
@@ -253,7 +288,7 @@ PORT=5000
 ### Data Export
 - JSON export of all data (users, menu, orders)
 - CSV export of orders for external analysis
-- Backup and restore functionality
+- Data backup capabilities for external storage
 
 ## 🔒 Security Features
 
@@ -273,7 +308,7 @@ PORT=5000
 
 ## 📝 License
 
-This project is licensed under the ISC License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the ISC License.
 
 ## 📞 Support
 
@@ -281,13 +316,30 @@ For support, please open an issue in the GitHub repository or contact the develo
 
 ## ✅ Recent Enhancements (Latest Update)
 
+### v2.1.0 - Replit Optimization & Bug Fixes
+- [x] **Replit Environment Optimization**: Fully configured for seamless deployment on Replit
+- [x] **Critical Bug Fixes**: Resolved PostgreSQL DECIMAL string handling causing blank pages
+- [x] **Price Formatting**: Fixed all `.toFixed()` errors with proper `parseFloat()` handling
+- [x] **Logo Optimization**: Improved login page logo sizing and layout
+- [x] **Database Integration**: Automatic PostgreSQL setup with proper environment configuration
+- [x] **CORS Configuration**: Optimized for Replit's proxy environment
+- [x] **Error Handling**: Comprehensive error handling for all price calculations
+
+### v2.0.0 - Enhanced Admin Dashboard
 - [x] **Enhanced Admin Dashboard**: Complete redesign with Bootstrap 5 integration
 - [x] **Real-time Stock Updates**: Inline stock modification with immediate visual feedback
 - [x] **Advanced Notification System**: Success/error alerts with auto-dismiss functionality
 - [x] **Improved Stock Management**: Visual status indicators and comprehensive alerts
-- [x] **Performance Optimizations**: Fixed price formatting issues and improved error handling
 - [x] **Professional UI/UX**: Modern responsive design with Font Awesome icons
 - [x] **Enhanced Sales Analytics**: Comprehensive dashboard with staff performance tracking
+
+## 🐛 Known Issues & Solutions
+
+### Troubleshooting
+- **Blank Page Issues**: If you encounter blank pages, ensure all price values are properly handled with `parseFloat()` before `.toFixed()`
+- **Database Connection**: PostgreSQL connection is automatic on Replit; for local development, ensure PostgreSQL is running
+- **Build Errors**: Run `npm install` to ensure all dependencies are installed
+- **CORS Issues**: The app is pre-configured for Replit's proxy environment
 
 ## 🎯 Future Roadmap
 
@@ -300,7 +352,9 @@ For support, please open an issue in the GitHub repository or contact the develo
 - [ ] Integration with payment processors (Stripe, PayPal)
 - [ ] Barcode scanning support
 - [ ] Inventory forecasting and automated reordering
+- [ ] Multi-currency support
+- [ ] Dark mode theme
 
 ---
 
-**Built with ❤️ using the MERN Stack**
+**Built with ❤️ using the PERN Stack**
