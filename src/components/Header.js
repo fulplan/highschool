@@ -17,20 +17,21 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-black text-white p-4 shadow">
+    <header className="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
       <div className="container flex justify-between items-center">
         <div className="flex items-center gap-4">
           <img 
             src="/icons/logo.png" 
             alt="Shawarma Boss Logo" 
-            className="w-12 h-12 rounded"
+            className="navbar-brand-img"
+            style={{ width: '48px', height: '48px', borderRadius: '0.25rem' }}
             onError={(e) => {
               e.target.style.display = 'none';
             }}
           />
           <div>
-            <h1 className="text-xl font-bold text-danger">Shawarma Boss</h1>
-            <small className="text-gray-400">Modern MERN Stack POS</small>
+            <h1 className="text-xl font-bold text-danger mb-0">Shawarma Boss</h1>
+            <small className="text-muted">Modern MERN Stack POS</small>
           </div>
         </div>
 
@@ -39,10 +40,10 @@ const Header = () => {
             <nav className="flex gap-4">
               <button
                 onClick={() => handleNavigation('/')}
-                className={`px-4 py-2 rounded transition-colors ${
+                className={`btn btn-sm ${
                   location.pathname === '/' 
-                    ? 'bg-red-600 text-white' 
-                    : 'text-gray-300 hover:text-white'
+                    ? 'btn-danger' 
+                    : 'btn-outline-light'
                 }`}
               >
                 POS
@@ -50,10 +51,10 @@ const Header = () => {
               {user.role === 'admin' && (
                 <button
                   onClick={() => handleNavigation('/admin')}
-                  className={`px-4 py-2 rounded transition-colors ${
+                  className={`btn btn-sm ${
                     location.pathname === '/admin' 
-                      ? 'bg-red-600 text-white' 
-                      : 'text-gray-300 hover:text-white'
+                      ? 'btn-danger' 
+                      : 'btn-outline-light'
                   }`}
                 >
                   Admin
@@ -61,16 +62,16 @@ const Header = () => {
               )}
             </nav>
             
-            <div className="text-right">
+            <div className="text-end">
               <div className="text-sm">
                 Logged in: <strong>{user.username}</strong>
-                <span className="ml-2 text-xs bg-red-600 px-2 py-1 rounded">
+                <span className="ms-2 badge bg-danger">
                   {user.role}
                 </span>
               </div>
               <button
                 onClick={handleLogout}
-                className="text-sm text-gray-300 hover:text-white mt-1"
+                className="btn btn-link btn-sm text-light p-0 mt-1"
               >
                 Logout
               </button>
