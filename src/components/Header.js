@@ -26,9 +26,6 @@ const Header = () => {
             className="me-2 rounded"
             width="32"
             height="32"
-            onError={(e) => {
-              e.target.style.display = 'none';
-            }}
           />
           <span className="fw-bold text-danger fs-5">Shawarma Boss</span>
           <small className="text-muted ms-2 d-none d-md-inline">Modern MERN Stack POS</small>
