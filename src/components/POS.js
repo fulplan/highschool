@@ -165,7 +165,7 @@ const POS = () => {
                     <div key={order.id} className="text-sm p-2 bg-gray-50 rounded">
                       <div className="flex justify-between items-center">
                         <span className="font-medium">Order #{order.id.slice(-6)}</span>
-                        <span className="text-success font-bold">GHS {order.total.toFixed(2)}</span>
+                        <span className="text-success font-bold">GHS {parseFloat(order.total || 0).toFixed(2)}</span>
                       </div>
                       <div className="text-muted text-xs mt-1">
                         {new Date(order.timestamp).toLocaleString()}

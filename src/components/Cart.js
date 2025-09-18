@@ -53,7 +53,7 @@ const Cart = ({ onConfirmOrder }) => {
                 <div className="flex-1">
                   <div className="font-medium">{item.name}</div>
                   <div className="text-sm text-muted">
-                    GHS {item.price.toFixed(2)} each
+                    GHS {parseFloat(item.price || 0).toFixed(2)} each
                   </div>
                 </div>
                 
@@ -82,7 +82,7 @@ const Cart = ({ onConfirmOrder }) => {
                   
                   <div className="text-right min-w-20">
                     <div className="font-bold">
-                      GHS {(item.price * item.quantity).toFixed(2)}
+                      GHS {(parseFloat(item.price || 0) * item.quantity).toFixed(2)}
                     </div>
                   </div>
                   

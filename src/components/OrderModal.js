@@ -56,7 +56,7 @@ const OrderModal = ({ order, onClose }) => {
                     <span>
                       {item.name} × {item.quantity}
                     </span>
-                    <span>GHS {(item.price * item.quantity).toFixed(2)}</span>
+                    <span>GHS {(parseFloat(item.price || 0) * item.quantity).toFixed(2)}</span>
                   </div>
                 ))}
               </div>
@@ -65,7 +65,7 @@ const OrderModal = ({ order, onClose }) => {
             <div className="border-t pt-4">
               <div className="flex justify-between font-bold text-lg">
                 <span>Total:</span>
-                <span>GHS {order.total.toFixed(2)}</span>
+                <span>GHS {parseFloat(order.total || 0).toFixed(2)}</span>
               </div>
             </div>
             
