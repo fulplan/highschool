@@ -1,14 +1,13 @@
-// server.js - Shawarma Boss sync server (Express + SQLite)
+// server.js - Shawarma Boss sync server (Express + JSON file storage)
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const bodyParser = require('body-parser');
-const sqlite3 = require('sqlite3').verbose();
 
 const PORT = process.env.PORT || 4000;
-const DB_FILE = process.env.DB_FILE || 'orders.db';
+const DB_FILE = process.env.DB_FILE || 'data.json';
 const SYNC_TOKEN = process.env.SYNC_TOKEN || ''; // optional
 
 const app = express();
@@ -25,67 +24,61 @@ function requireToken(req, res, next) {
   next();
 }
 
-// Ensure DB folder & open
+// JSON file storage helpers
 const dbPath = path.join(__dirname, DB_FILE);
-const dbExists = fs.existsSync(dbPath);
-const db = new sqlite3.Database(dbPath);
 
-db.serialize(() => {
-  // users table (staff/admin)
-  db.run(`CREATE TABLE IF NOT EXISTS users (
-    username TEXT PRIMARY KEY,
-    password TEXT,
-    role TEXT,
-    meta TEXT
-  )`);
-
-  // menu items
-  db.run(`CREATE TABLE IF NOT EXISTS menu (
-    id TEXT PRIMARY KEY,
-    name TEXT,
-    price REAL,
-    stock INTEGER,
-    meta TEXT
-  )`);
-
-  // orders (saved as payload JSON + summary fields)
-  db.run(`CREATE TABLE IF NOT EXISTS orders (
-    id TEXT PRIMARY KEY,
-    staff TEXT,
-    timestamp TEXT,
-    total REAL,
-    payload TEXT,
-    serverReceivedAt TEXT
-  )`);
-});
-
-// Helper promises
-function runAsync(sql, params=[]) {
-  return new Promise((resolve, reject) => db.run(sql, params, function(err){
-    if(err) return reject(err);
-    resolve(this);
-  }));
+function loadDB() {
+  try {
+    if (fs.existsSync(dbPath)) {
+      const data = fs.readFileSync(dbPath, 'utf8');
+      return JSON.parse(data);
+    }
+  } catch (e) {
+    console.error('Error loading database:', e);
+  }
+  // Default data structure
+  return {
+    users: [
+      { username: 'admin', password: 'admin123', role: 'admin', meta: null },
+      { username: 'staff1', password: 'staff123', role: 'staff', meta: null }
+    ],
+    menu: [
+      { id: 'm-1', name: 'Shawarma Wrap', price: 20, stock: 25, meta: null },
+      { id: 'm-2', name: 'Chicken Shawarma', price: 25, stock: 20, meta: null },
+      { id: 'm-3', name: 'Beef Shawarma', price: 28, stock: 18, meta: null }
+    ],
+    orders: []
+  };
 }
-function allAsync(sql, params=[]) {
-  return new Promise((resolve,reject)=> db.all(sql, params, (err,rows)=> err?reject(err):resolve(rows)));
+
+function saveDB(data) {
+  try {
+    fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
+    return true;
+  } catch (e) {
+    console.error('Error saving database:', e);
+    return false;
+  }
 }
-function getAsync(sql, params=[]) {
-  return new Promise((resolve,reject)=> db.get(sql, params, (err,row)=> err?reject(err):resolve(row)));
-}
+
+// Initialize database
+let db = loadDB();
 
 // ----- Endpoints -----
 
 // Health
 app.get('/health', (req,res)=> res.json({ ok:true, db: DB_FILE }));
 
-// LOGIN - simple check against users table
-app.post('/login', requireToken, async (req,res) => {
+// LOGIN - simple check against users
+app.post('/login', requireToken, (req,res) => {
   try {
     const { username, password } = req.body || {};
     if (!username || !password) return res.status(400).json({ ok:false, error:'username+password required' });
-    const row = await getAsync('SELECT username, role FROM users WHERE username = ? AND password = ?', [username, password]);
-    if (!row) return res.status(401).json({ ok:false, error:'invalid credentials' });
-    res.json({ ok:true, username: row.username, role: row.role });
+    
+    const user = db.users.find(u => u.username === username && u.password === password);
+    if (!user) return res.status(401).json({ ok:false, error:'invalid credentials' });
+    
+    res.json({ ok:true, username: user.username, role: user.role });
   } catch (e) {
     console.error(e);
     res.status(500).json({ ok:false, error:e.message });
@@ -93,108 +86,180 @@ app.post('/login', requireToken, async (req,res) => {
 });
 
 // STAFF - GET list
-app.get('/staff', requireToken, async (req,res) => {
+app.get('/staff', requireToken, (req,res) => {
   try {
-    const rows = await allAsync('SELECT username, role, meta FROM users');
-    const mapped = rows.map(r => ({ username: r.username, role: r.role, meta: r.meta ? JSON.parse(r.meta) : null }));
+    const mapped = db.users.map(u => ({ username: u.username, role: u.role, meta: u.meta }));
     res.json(mapped);
   } catch(e){ res.status(500).json({ error:e.message }); }
 });
 
 // STAFF BULK - upsert many
-app.post('/staff/bulk', requireToken, async (req,res) => {
+app.post('/staff/bulk', requireToken, (req,res) => {
   try {
     const list = Array.isArray(req.body) ? req.body : (req.body.users || []);
     const accepted = [];
-    await Promise.all(list.map(async u => {
+    
+    list.forEach(u => {
       if (!u.username) return;
-      const meta = u.meta ? JSON.stringify(u.meta) : null;
-      // upsert
-      await runAsync(`INSERT INTO users (username,password,role,meta) VALUES (?,?,?,?)
-        ON CONFLICT(username) DO UPDATE SET password=excluded.password, role=excluded.role, meta=excluded.meta`, [u.username, u.password||'', u.role||'staff', meta]);
+      
+      const existingIndex = db.users.findIndex(existing => existing.username === u.username);
+      const userData = {
+        username: u.username,
+        password: u.password || '',
+        role: u.role || 'staff',
+        meta: u.meta || null
+      };
+      
+      if (existingIndex >= 0) {
+        db.users[existingIndex] = userData;
+      } else {
+        db.users.push(userData);
+      }
       accepted.push(u.username);
-    }));
+    });
+    
+    saveDB(db);
     res.json({ accepted });
   } catch(e){ res.status(500).json({ error:e.message }); }
 });
 
 // MENU - GET
-app.get('/menu', requireToken, async (req,res) => {
+app.get('/menu', requireToken, (req,res) => {
   try {
-    const rows = await allAsync('SELECT id,name,price,stock,meta FROM menu');
-    const mapped = rows.map(r => ({ id:r.id, name:r.name, price:r.price, stock:r.stock, meta: r.meta ? JSON.parse(r.meta) : null }));
-    res.json(mapped);
+    res.json(db.menu);
   } catch(e){ res.status(500).json({ error:e.message }); }
 });
 
 // MENU BULK - upsert
-app.post('/menu/bulk', requireToken, async (req,res) => {
+app.post('/menu/bulk', requireToken, (req,res) => {
   try {
     const list = Array.isArray(req.body) ? req.body : (req.body.menu || []);
     const accepted = [];
-    await Promise.all(list.map(async it => {
+    
+    list.forEach(it => {
       const id = it.id || ('m-'+Date.now()+'-'+Math.floor(Math.random()*1000));
-      const meta = it.meta ? JSON.stringify(it.meta) : null;
-      await runAsync(`INSERT INTO menu (id,name,price,stock,meta) VALUES (?,?,?,?,?)
-        ON CONFLICT(id) DO UPDATE SET name=excluded.name, price=excluded.price, stock=excluded.stock, meta=excluded.meta`, [id, it.name||'item', it.price||0, it.stock||0, meta]);
+      const existingIndex = db.menu.findIndex(existing => existing.id === id);
+      const menuItem = {
+        id: id,
+        name: it.name || 'item',
+        price: it.price || 0,
+        stock: it.stock || 0,
+        meta: it.meta || null
+      };
+      
+      if (existingIndex >= 0) {
+        db.menu[existingIndex] = menuItem;
+      } else {
+        db.menu.push(menuItem);
+      }
       accepted.push(id);
-    }));
+    });
+    
+    saveDB(db);
     res.json({ accepted });
   } catch(e){ res.status(500).json({ error:e.message }); }
 });
 
 // ORDERS - GET (recent)
-app.get('/orders', requireToken, async (req,res) => {
+app.get('/orders', requireToken, (req,res) => {
   try {
-    const rows = await allAsync('SELECT id,staff,timestamp,total,payload,serverReceivedAt FROM orders ORDER BY serverReceivedAt DESC LIMIT 500');
-    const mapped = rows.map(r => ({ id:r.id, staff:r.staff, timestamp:r.timestamp, total:r.total, payload: r.payload ? JSON.parse(r.payload) : null, serverReceivedAt: r.serverReceivedAt }));
-    res.json(mapped);
+    const recent = db.orders.sort((a, b) => new Date(b.serverReceivedAt) - new Date(a.serverReceivedAt)).slice(0, 500);
+    res.json(recent);
   } catch(e){ res.status(500).json({ error:e.message }); }
 });
 
 // ORDERS - POST (single)
-app.post('/orders', requireToken, async (req,res) => {
+app.post('/orders', requireToken, (req,res) => {
   try {
     const order = req.body;
     if (!order || !order.id) return res.status(400).json({ error:'order with id required' });
-    const payload = JSON.stringify(order);
-    const serverReceivedAt = new Date().toISOString();
-    // insert if not exists
-    await runAsync('INSERT OR IGNORE INTO orders (id,staff,timestamp,total,payload,serverReceivedAt) VALUES (?,?,?,?,?,?)',
-      [order.id, order.user || order.staff || '', order.timestamp || new Date().toISOString(), order.total || 0, payload, serverReceivedAt]);
+    
+    // Check if order already exists
+    const exists = db.orders.find(o => o.id === order.id);
+    if (!exists) {
+      const orderData = {
+        id: order.id,
+        staff: order.user || order.staff || '',
+        timestamp: order.timestamp || new Date().toISOString(),
+        total: order.total || 0,
+        payload: order,
+        serverReceivedAt: new Date().toISOString()
+      };
+      db.orders.push(orderData);
+      saveDB(db);
+    }
     res.json({ accepted: [order.id] });
   } catch(e){ res.status(500).json({ error:e.message }); }
 });
 
 // ORDERS bulk
-app.post('/orders/bulk', requireToken, async (req,res) => {
+app.post('/orders/bulk', requireToken, (req,res) => {
   try {
     const list = Array.isArray(req.body) ? req.body : (req.body.orders || []);
     const accepted = [];
-    await Promise.all(list.map(async o => {
+    
+    list.forEach(o => {
       if (!o || !o.id) return;
-      const exists = await getAsync('SELECT id FROM orders WHERE id = ?', [o.id]);
-      if (exists) return; // skip
-      const payload = JSON.stringify(o);
-      const serverReceivedAt = new Date().toISOString();
-      await runAsync('INSERT INTO orders (id,staff,timestamp,total,payload,serverReceivedAt) VALUES (?,?,?,?,?,?)',
-        [o.id, o.user || o.staff || '', o.timestamp || new Date().toISOString(), o.total || 0, payload, serverReceivedAt]);
+      const exists = db.orders.find(existing => existing.id === o.id);
+      if (exists) return; // skip if already exists
+      
+      const orderData = {
+        id: o.id,
+        staff: o.user || o.staff || '',
+        timestamp: o.timestamp || new Date().toISOString(),
+        total: o.total || 0,
+        payload: o,
+        serverReceivedAt: new Date().toISOString()
+      };
+      db.orders.push(orderData);
       accepted.push(o.id);
-    }));
+    });
+    
+    saveDB(db);
     res.json({ accepted, rejected: [] });
   } catch(e){ res.status(500).json({ error:e.message }); }
 });
 
 // SALES endpoints - alias to orders
-app.get('/sales', requireToken, async (req,res) => {
+app.get('/sales', requireToken, (req,res) => {
   try {
-    const rows = await allAsync('SELECT id,staff,timestamp,total,payload FROM orders ORDER BY serverReceivedAt DESC LIMIT 500');
-    res.json(rows.map(r => ({ id:r.id, staff:r.staff, timestamp:r.timestamp, total:r.total, payload: r.payload ? JSON.parse(r.payload) : null })));
+    const sales = db.orders
+      .sort((a, b) => new Date(b.serverReceivedAt) - new Date(a.serverReceivedAt))
+      .slice(0, 500)
+      .map(r => ({ id: r.id, staff: r.staff, timestamp: r.timestamp, total: r.total, payload: r.payload }));
+    res.json(sales);
   } catch(e){ res.status(500).json({ error:e.message }); }
 });
-app.post('/sales/bulk', requireToken, async (req,res) => {
-  // reuse orders bulk for sales
-  return app._router.handle({ method:'POST', url:'/orders/bulk', headers:req.headers, body:req.body }, res);
+
+app.post('/sales/bulk', requireToken, (req,res) => {
+  // reuse orders bulk endpoint
+  const ordersBulkEndpoint = (req, res) => {
+    try {
+      const list = Array.isArray(req.body) ? req.body : (req.body.orders || []);
+      const accepted = [];
+      
+      list.forEach(o => {
+        if (!o || !o.id) return;
+        const exists = db.orders.find(existing => existing.id === o.id);
+        if (exists) return;
+        
+        const orderData = {
+          id: o.id,
+          staff: o.user || o.staff || '',
+          timestamp: o.timestamp || new Date().toISOString(),
+          total: o.total || 0,
+          payload: o,
+          serverReceivedAt: new Date().toISOString()
+        };
+        db.orders.push(orderData);
+        accepted.push(o.id);
+      });
+      
+      saveDB(db);
+      res.json({ accepted, rejected: [] });
+    } catch(e){ res.status(500).json({ error:e.message }); }
+  };
+  ordersBulkEndpoint(req, res);
 });
 
 // Simple root
