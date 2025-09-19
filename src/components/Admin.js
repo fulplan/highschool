@@ -182,141 +182,201 @@ const Admin = () => {
   ];
 
   const renderDashboard = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-primary bg-opacity-10 border border-primary border-opacity-20 rounded-lg p-4 text-center">
-          <div className="text-3xl font-bold text-primary mb-1">{salesStats.totalOrders}</div>
-          <div className="text-sm text-muted">Total Orders</div>
+    <div className="dashboard-container">
+      {/* KPI Grid Cards */}
+      <div className="kpi-grid d-flex flex-wrap gap-3 mb-4">
+        <div className="kpi-card flex-fill">
+          <div className="kpi-icon bg-primary">
+            <i className="fas fa-shopping-cart"></i>
+          </div>
+          <div className="kpi-content">
+            <div className="kpi-value text-primary">{salesStats.totalOrders}</div>
+            <div className="kpi-label">Total Orders</div>
+          </div>
         </div>
-        <div className="bg-success bg-opacity-10 border border-success border-opacity-20 rounded-lg p-4 text-center">
-          <div className="text-3xl font-bold text-success mb-1">GHS {salesStats.totalSales.toFixed(2)}</div>
-          <div className="text-sm text-muted">Total Sales</div>
+        <div className="kpi-card flex-fill">
+          <div className="kpi-icon bg-success">
+            <i className="fas fa-dollar-sign"></i>
+          </div>
+          <div className="kpi-content">
+            <div className="kpi-value text-success">GHS {salesStats.totalSales.toFixed(2)}</div>
+            <div className="kpi-label">Total Sales</div>
+          </div>
         </div>
-        <div className="bg-warning bg-opacity-10 border border-warning border-opacity-20 rounded-lg p-4 text-center">
-          <div className="text-3xl font-bold text-warning mb-1">{salesStats.todayOrders}</div>
-          <div className="text-sm text-muted">Today's Orders</div>
+        <div className="kpi-card flex-fill">
+          <div className="kpi-icon bg-warning">
+            <i className="fas fa-clock"></i>
+          </div>
+          <div className="kpi-content">
+            <div className="kpi-value text-warning">{salesStats.todayOrders}</div>
+            <div className="kpi-label">Today's Orders</div>
+          </div>
         </div>
-        <div className="bg-danger bg-opacity-10 border border-danger border-opacity-20 rounded-lg p-4 text-center">
-          <div className="text-3xl font-bold text-danger mb-1">GHS {salesStats.todaySales.toFixed(2)}</div>
-          <div className="text-sm text-muted">Today's Sales</div>
-        </div>
-      </div>
-      
-      {/* Staff Performance Overview */}
-      <div className="card">
-        <div className="card-header">
-          <h4 className="font-bold text-danger mb-0">Staff Performance</h4>
-        </div>
-        <div className="card-body">
-          <div className="row g-3">
-            {staff.map((member) => (
-              <div key={member.username} className="col-md-6 col-lg-4">
-                <div className="border rounded-lg p-3 bg-light">
-                  <div className="d-flex justify-content-between align-items-start">
-                    <div>
-                      <div className="fw-bold">{member.username}</div>
-                      <div className="text-sm text-muted">{member.role}</div>
-                    </div>
-                    {salesStats.staffSales[member.username] && (
-                      <div className="text-end">
-                        <div className="fw-bold">{salesStats.staffSales[member.username].orders}</div>
-                        <div className="text-sm text-success">GHS {salesStats.staffSales[member.username].total.toFixed(2)}</div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
+        <div className="kpi-card flex-fill">
+          <div className="kpi-icon bg-info">
+            <i className="fas fa-chart-line"></i>
+          </div>
+          <div className="kpi-content">
+            <div className="kpi-value text-info">GHS {salesStats.todaySales.toFixed(2)}</div>
+            <div className="kpi-label">Today's Sales</div>
           </div>
         </div>
       </div>
-
-      {/* Stock Alerts */}
-      <div className="card">
-        <div className="card-header">
-          <h4 className="font-bold text-danger mb-0">Stock Alerts</h4>
-        </div>
-        <div className="card-body">
-          {menu.filter(item => item.stock <= 5).length === 0 ? (
-            <div className="text-success text-center py-3">
-              <i className="fas fa-check-circle me-2"></i>
-              All items are well stocked
-            </div>
-          ) : (
-            <div className="row g-2">
-              {menu.filter(item => item.stock <= 5).map(item => (
-                <div key={item.id} className="col-md-6 col-lg-4">
-                  <div className={`alert ${item.stock === 0 ? 'alert-danger' : 'alert-warning'} mb-0`}>
-                    <strong>{item.name}</strong><br/>
-                    <small>{item.stock === 0 ? 'Out of stock' : `${item.stock} left`}</small>
+      
+      {/* Responsive Grid Layout for Staff and Stock */}
+      <div className="admin-grid-layout d-flex flex-column flex-lg-row gap-4">
+        {/* Staff Performance Panel */}
+        <div className="admin-panel flex-fill">
+          <div className="panel-header">
+            <h4 className="panel-title">
+              <i className="fas fa-users me-2"></i>
+              Staff Performance
+            </h4>
+          </div>
+          <div className="panel-body">
+            <div className="staff-grid d-flex flex-wrap gap-3">
+              {staff.map((member) => (
+                <div key={member.username} className="staff-card flex-fill">
+                  <div className="staff-avatar">
+                    <i className="fas fa-user"></i>
                   </div>
+                  <div className="staff-info">
+                    <div className="staff-name">{member.username}</div>
+                    <div className="staff-role">{member.role}</div>
+                  </div>
+                  {salesStats.staffSales[member.username] && (
+                    <div className="staff-stats">
+                      <div className="stat-orders">{salesStats.staffSales[member.username].orders}</div>
+                      <div className="stat-sales">GHS {salesStats.staffSales[member.username].total.toFixed(2)}</div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
-          )}
+          </div>
+        </div>
+
+        {/* Stock Alerts Panel */}
+        <div className="admin-panel flex-fill">
+          <div className="panel-header">
+            <h4 className="panel-title">
+              <i className="fas fa-exclamation-triangle me-2"></i>
+              Stock Alerts
+            </h4>
+          </div>
+          <div className="panel-body">
+            {menu.filter(item => item.stock <= 5).length === 0 ? (
+              <div className="no-alerts">
+                <i className="fas fa-check-circle"></i>
+                <span>All items are well stocked</span>
+              </div>
+            ) : (
+              <div className="stock-alerts d-flex flex-column gap-2">
+                {menu.filter(item => item.stock <= 5).map(item => (
+                  <div key={item.id} className={`stock-alert ${item.stock === 0 ? 'critical' : 'warning'}`}>
+                    <div className="alert-icon">
+                      <i className={`fas ${item.stock === 0 ? 'fa-times-circle' : 'fa-exclamation-triangle'}`}></i>
+                    </div>
+                    <div className="alert-content">
+                      <div className="alert-title">{item.name}</div>
+                      <div className="alert-message">{item.stock === 0 ? 'Out of stock' : `${item.stock} left`}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
 
   const renderStaffManagement = () => (
-    <div className="row">
-      <div className="col-lg-8">
-        <div className="card">
-          <div className="card-header">
-            <h4 className="font-bold text-danger mb-0">Staff Members</h4>
+    <div className="staff-management-container">
+      <div className="admin-grid-layout d-flex flex-column flex-xl-row gap-4">
+        {/* Staff List Panel */}
+        <div className="admin-panel flex-fill">
+          <div className="panel-header">
+            <h4 className="panel-title">
+              <i className="fas fa-users me-2"></i>
+              Staff Members
+            </h4>
           </div>
-          <div className="card-body">
-            <div className="row g-3">
+          <div className="panel-body">
+            <div className="staff-management-grid d-flex flex-wrap gap-3">
               {staff.map((member) => (
-                <div key={member.username} className="col-md-6">
-                  <div className="border rounded-lg p-3 bg-light">
-                    <div className="d-flex justify-content-between align-items-center">
-                      <div>
-                        <div className="fw-bold">{member.username}</div>
-                        <div className="text-sm text-muted">{member.role}</div>
-                      </div>
-                      {salesStats.staffSales[member.username] && (
-                        <div className="text-end">
-                          <div className="fw-bold">{salesStats.staffSales[member.username].orders} orders</div>
-                          <div className="text-success">GHS {salesStats.staffSales[member.username].total.toFixed(2)}</div>
-                        </div>
-                      )}
+                <div key={member.username} className="staff-management-card flex-fill">
+                  <div className="staff-card-header">
+                    <div className="staff-avatar large">
+                      <i className="fas fa-user"></i>
                     </div>
+                    <div className="staff-badge">
+                      <span className={`badge ${member.role === 'admin' ? 'bg-danger' : 'bg-primary'}`}>
+                        {member.role}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="staff-card-body">
+                    <div className="staff-name">{member.username}</div>
+                    {salesStats.staffSales[member.username] && (
+                      <div className="staff-performance">
+                        <div className="performance-item">
+                          <span className="performance-label">Orders:</span>
+                          <span className="performance-value">{salesStats.staffSales[member.username].orders}</span>
+                        </div>
+                        <div className="performance-item">
+                          <span className="performance-label">Sales:</span>
+                          <span className="performance-value text-success">GHS {salesStats.staffSales[member.username].total.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="staff-card-actions">
+                    <button className="btn btn-sm btn-outline-primary">
+                      <i className="fas fa-edit"></i>
+                    </button>
+                    <button className="btn btn-sm btn-outline-danger">
+                      <i className="fas fa-trash"></i>
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
           </div>
         </div>
-      </div>
-      
-      <div className="col-lg-4">
-        <div className="card">
-          <div className="card-header">
-            <h4 className="font-bold text-danger mb-0">Add New Staff</h4>
+        
+        {/* Add Staff Form Panel */}
+        <div className="admin-panel" style={{minWidth: '320px'}}>
+          <div className="panel-header">
+            <h4 className="panel-title">
+              <i className="fas fa-user-plus me-2"></i>
+              Add New Staff
+            </h4>
           </div>
-          <div className="card-body">
-            <form onSubmit={handleAddStaff}>
-              <div className="mb-3">
+          <div className="panel-body">
+            <form onSubmit={handleAddStaff} className="add-staff-form">
+              <div className="form-group">
+                <label className="form-label">Username</label>
                 <input
                   type="text"
-                  placeholder="Username"
+                  placeholder="Enter username"
                   value={newStaff.username}
                   onChange={(e) => setNewStaff({...newStaff, username: e.target.value})}
                   className="form-control"
                 />
               </div>
-              <div className="mb-3">
+              <div className="form-group">
+                <label className="form-label">Password</label>
                 <input
                   type="password"
-                  placeholder="Password"
+                  placeholder="Enter password"
                   value={newStaff.password}
                   onChange={(e) => setNewStaff({...newStaff, password: e.target.value})}
                   className="form-control"
                 />
               </div>
-              <div className="mb-3">
+              <div className="form-group">
+                <label className="form-label">Role</label>
                 <select
                   value={newStaff.role}
                   onChange={(e) => setNewStaff({...newStaff, role: e.target.value})}
@@ -328,7 +388,7 @@ const Admin = () => {
               </div>
               <button type="submit" className="btn btn-danger w-100">
                 <i className="fas fa-user-plus me-2"></i>
-                Add Staff
+                Add Staff Member
               </button>
             </form>
           </div>
