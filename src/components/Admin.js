@@ -10,6 +10,8 @@ const Admin = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeSection, setActiveSection] = useState('dashboard');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Form states
   const [newStaff, setNewStaff] = useState({ username: '', password: '', role: 'staff' });
@@ -20,6 +22,23 @@ const Admin = () => {
   useEffect(() => {
     loadAllData();
   }, []);
+
+  // Mobile detection and responsive handling
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Close mobile menu when section changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [activeSection]);
 
   const loadAllData = async () => {
     try {
@@ -642,47 +661,114 @@ const Admin = () => {
   }
 
   return (
-    <div className="admin-layout d-flex">
-      {/* Sidebar */}
-      <div className="admin-sidebar bg-light border-end d-flex flex-column">
-        <div className="p-3 border-bottom">
-          <h5 className="mb-0 text-danger fw-bold">
-            <i className="fas fa-cog me-2"></i>
-            Admin Panel
-          </h5>
+    <div className={`admin-layout ${isMobile ? 'mobile' : ''}`}>
+      {/* Mobile Header */}
+      {isMobile && (
+        <div className="mobile-header">
+          <div className="mobile-header-content">
+            <button 
+              className="mobile-menu-toggle"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle navigation menu"
+            >
+              <i className={`fas ${isMobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
+            </button>
+            <h2 className="mobile-page-title">
+              {sidebarItems.find(item => item.id === activeSection)?.label || 'Dashboard'}
+            </h2>
+            <div className="mobile-user-info">
+              <div className="mobile-user-avatar">
+                <i className="fas fa-user"></i>
+              </div>
+            </div>
+          </div>
         </div>
-        <nav className="flex-1">
-          <ul className="nav nav-pills flex-column p-3">
-            {sidebarItems.map((item) => (
-              <li key={item.id} className="nav-item mb-1">
+      )}
+
+      {/* Mobile Menu Overlay */}
+      {isMobile && isMobileMenuOpen && (
+        <div className="mobile-menu-overlay" onClick={() => setIsMobileMenuOpen(false)}>
+          <div className="mobile-menu" onClick={(e) => e.stopPropagation()}>
+            <div className="mobile-menu-header">
+              <div className="mobile-brand">
+                <i className="fas fa-shield-alt"></i>
+                <span>Admin Panel</span>
+              </div>
+              <button 
+                className="mobile-menu-close"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <nav className="mobile-nav">
+              {sidebarItems.map((item) => (
                 <button
-                  className={`nav-link w-100 text-start d-flex align-items-center ${
-                    activeSection === item.id ? 'active' : 'text-muted'
-                  }`}
+                  key={item.id}
+                  className={`mobile-nav-item ${activeSection === item.id ? 'active' : ''}`}
                   onClick={() => setActiveSection(item.id)}
                 >
-                  <i className={`${item.icon} me-3`}></i>
-                  {item.label}
+                  <div className="mobile-nav-icon">
+                    <i className={item.icon}></i>
+                  </div>
+                  <span className="mobile-nav-label">{item.label}</span>
+                  <i className="fas fa-chevron-right mobile-nav-arrow"></i>
                 </button>
-              </li>
-            ))}
-          </ul>
+              ))}
+            </nav>
+          </div>
+        </div>
+      )}
+
+      {/* Desktop Sidebar */}
+      <div className={`admin-sidebar ${isMobile ? 'mobile-hidden' : ''}`}>
+        <div className="sidebar-header">
+          <div className="sidebar-brand">
+            <i className="fas fa-shield-alt me-2"></i>
+            <span className="brand-text">Admin Panel</span>
+          </div>
+        </div>
+        <nav className="sidebar-nav">
+          {sidebarItems.map((item) => (
+            <button
+              key={item.id}
+              className={`nav-item ${activeSection === item.id ? 'active' : ''}`}
+              onClick={() => setActiveSection(item.id)}
+            >
+              <div className="nav-icon">
+                <i className={item.icon}></i>
+              </div>
+              <span className="nav-label">{item.label}</span>
+            </button>
+          ))}
         </nav>
       </div>
 
-      {/* Main Content */}
-      <div className="admin-content flex-1">
-        <div className="p-4">
+      {/* Main Content Area */}
+      <div className="admin-content">
+        {/* Desktop Header */}
+        {!isMobile && (
+          <div className="content-header">
+            <h3 className="page-title">
+              {sidebarItems.find(item => item.id === activeSection)?.label || 'Dashboard'}
+            </h3>
+          </div>
+        )}
+        
+        <div className="content-body">
           {/* Success/Error Messages */}
           {successMessage && (
             <div className="alert alert-success alert-dismissible fade show mb-4" role="alert">
-              <i className="fas fa-check-circle me-2"></i>{successMessage}
+              <i className="fas fa-check-circle me-2"></i>
+              {successMessage}
               <button type="button" className="btn-close" onClick={() => setSuccessMessage('')}></button>
             </div>
           )}
+          
           {error && (
             <div className="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-              <i className="fas fa-exclamation-triangle me-2"></i>{error}
+              <i className="fas fa-exclamation-circle me-2"></i>
+              {error}
               <button type="button" className="btn-close" onClick={() => setError('')}></button>
             </div>
           )}
@@ -690,6 +776,33 @@ const Admin = () => {
           {renderContent()}
         </div>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      {isMobile && (
+        <div className="mobile-bottom-nav">
+          {sidebarItems.slice(0, 4).map((item) => (
+            <button
+              key={item.id}
+              className={`bottom-nav-item ${activeSection === item.id ? 'active' : ''}`}
+              onClick={() => setActiveSection(item.id)}
+            >
+              <div className="bottom-nav-icon">
+                <i className={item.icon}></i>
+              </div>
+              <span className="bottom-nav-label">{item.label}</span>
+            </button>
+          ))}
+          <button
+            className="bottom-nav-item"
+            onClick={() => setIsMobileMenuOpen(true)}
+          >
+            <div className="bottom-nav-icon">
+              <i className="fas fa-ellipsis-h"></i>
+            </div>
+            <span className="bottom-nav-label">More</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };
