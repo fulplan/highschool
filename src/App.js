@@ -4,6 +4,7 @@ import Header from './components/Header';
 import Login from './components/Login';
 import POS from './components/POS';
 import Admin from './components/Admin';
+import Orders from './components/Orders';
 import { AuthProvider, useAuth } from './services/AuthContext';
 import { CartProvider } from './services/CartContext';
 import './App.css';
@@ -28,6 +29,7 @@ function AppContent() {
         ) : (
           <Routes>
             <Route path="/" element={<POS />} />
+            <Route path="/orders" element={<Orders />} />
             <Route path="/admin" element={
               user.role === 'admin' ? <Admin /> : <Navigate to="/" replace />
             } />

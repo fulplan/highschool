@@ -11,9 +11,11 @@ const Header = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showManagementDropdown, setShowManagementDropdown] = useState(false);
+  const [showAnalyticsDropdown, setShowAnalyticsDropdown] = useState(false);
   const [quickStats, setQuickStats] = useState({
     todaySales: 0,
-    pendingOrders: 0,
+    todaysOrders: 0, // Changed from pendingOrders to be more accurate
     lowStockItems: 0,
     isLoading: true
   });
@@ -50,12 +52,12 @@ const Header = () => {
         return !isNaN(stock) && stock < 10;
       }).length;
       
-      // For now, show total orders count as "open orders" since we don't have pending status
+      // Show today's order count
       const totalOrdersToday = todayOrders.length;
       
       setQuickStats({
         todaySales: todaySales,
-        pendingOrders: totalOrdersToday, // Show today's order count as activity indicator
+        todaysOrders: totalOrdersToday, // Today's order count
         lowStockItems: lowStockItems,
         isLoading: false
       });
@@ -65,20 +67,42 @@ const Header = () => {
     }
   };
 
-  // Mock notification system for UI demonstration (ready for real-time integration)
-  useEffect(() => {
-    // Demo notifications - can be replaced with WebSocket/SSE for real-time updates
-    const mockNotifications = [
-      { id: 1, type: 'order', message: 'New order #1234 received', time: '2 min ago', read: false },
-      { id: 2, type: 'system', message: 'Daily backup completed', time: '1 hour ago', read: true },
-      { id: 3, type: 'inventory', message: 'Low stock alert: Chicken Shawarma', time: '3 hours ago', read: false },
-    ];
-    setNotifications(mockNotifications);
-    setUnreadCount(mockNotifications.filter(n => !n.read).length);
+  // Role-specific notification system
+  const generateRoleBasedNotifications = () => {
+    if (!user) return [];
+
+    const baseNotifications = [];
     
-    // TODO: Replace with real-time notification subscription
-    // Example: WebSocket connection, Server-Sent Events, or polling
-  }, []);
+    if (user.role === 'staff') {
+      // Staff notifications: Order updates, shift reminders, low stock alerts
+      return [
+        { id: 1, type: 'order', message: 'Order #1234 completed successfully', time: '5 min ago', read: false, priority: 'normal' },
+        { id: 2, type: 'inventory', message: 'Low stock: Chicken Shawarma (8 left)', time: '15 min ago', read: false, priority: 'warning' },
+        { id: 3, type: 'system', message: 'Shift started - POS ready', time: '2 hours ago', read: true, priority: 'info' },
+        { id: 4, type: 'order', message: 'Customer requested extra sauce for order #1230', time: '1 hour ago', read: true, priority: 'normal' }
+      ];
+    } else if (user.role === 'admin') {
+      // Admin notifications: Sales targets, staff actions, system alerts, reports ready
+      return [
+        { id: 1, type: 'sales', message: 'Daily sales target 80% reached ($640/$800)', time: '10 min ago', read: false, priority: 'success' },
+        { id: 2, type: 'staff', message: 'New staff member "john_doe" added to system', time: '30 min ago', read: false, priority: 'info' },
+        { id: 3, type: 'system', message: 'Weekly report generated and ready for export', time: '1 hour ago', read: false, priority: 'info' },
+        { id: 4, type: 'inventory', message: 'Critical: 3 items below minimum stock level', time: '2 hours ago', read: false, priority: 'critical' },
+        { id: 5, type: 'system', message: 'Database backup completed successfully', time: '3 hours ago', read: true, priority: 'info' },
+        { id: 6, type: 'sales', message: 'Peak hour alert: 15 orders in last hour', time: '4 hours ago', read: true, priority: 'warning' }
+      ];
+    }
+
+    return baseNotifications;
+  };
+
+  useEffect(() => {
+    if (user) {
+      const roleNotifications = generateRoleBasedNotifications();
+      setNotifications(roleNotifications);
+      setUnreadCount(roleNotifications.filter(n => !n.read).length);
+    }
+  }, [user]);
 
   // Fetch quick stats when user changes or component mounts
   useEffect(() => {
@@ -96,11 +120,17 @@ const Header = () => {
       if (showNotifications && !event.target.closest('.notification-wrapper')) {
         setShowNotifications(false);
       }
+      if (showManagementDropdown && !event.target.closest('.management-dropdown')) {
+        setShowManagementDropdown(false);
+      }
+      if (showAnalyticsDropdown && !event.target.closest('.analytics-dropdown')) {
+        setShowAnalyticsDropdown(false);
+      }
     };
 
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
-  }, [showNotifications]);
+  }, [showNotifications, showManagementDropdown, showAnalyticsDropdown]);
 
   const handleLogout = () => {
     logout();
@@ -130,7 +160,19 @@ const Header = () => {
       case 'order': return 'fas fa-shopping-cart';
       case 'system': return 'fas fa-cog';
       case 'inventory': return 'fas fa-exclamation-triangle';
+      case 'sales': return 'fas fa-chart-line';
+      case 'staff': return 'fas fa-users';
       default: return 'fas fa-bell';
+    }
+  };
+
+  const getNotificationPriorityClass = (priority) => {
+    switch (priority) {
+      case 'critical': return 'notification-critical';
+      case 'warning': return 'notification-warning';
+      case 'success': return 'notification-success';
+      case 'info': return 'notification-info';
+      default: return 'notification-normal';
     }
   };
 
@@ -204,64 +246,118 @@ const Header = () => {
                   </div>
                   <span className="tab-label">POS</span>
                 </button>
+
+                {/* Staff accessible features */}
+                {user && (
+                  <button
+                    onClick={() => handleNavigation('/orders')}
+                    className={`nav-tab ${location.pathname === '/orders' ? 'active' : ''}`}
+                    title="View Recent Orders"
+                    aria-current={location.pathname === '/orders' ? 'page' : undefined}
+                  >
+                    <div className="tab-icon">
+                      <i className="fas fa-receipt"></i>
+                    </div>
+                    <span className="tab-label">Orders</span>
+                  </button>
+                )}
+
+                {/* Admin-only primary tabs */}
                 {user.role === 'admin' && (
-                  <div className="nav-tab-dropdown">
-                    <button
-                      className={`nav-tab ${location.pathname === '/admin' ? 'active' : ''}`}
-                      data-bs-toggle="dropdown" 
-                      aria-expanded="false"
-                      title="Admin Dashboard"
-                      aria-current={location.pathname === '/admin' ? 'page' : undefined}
-                    >
-                      <div className="tab-icon">
-                        <i className="fas fa-shield-alt"></i>
-                      </div>
-                      <span className="tab-label">Admin</span>
-                      <i className="fas fa-chevron-down ms-1"></i>
-                    </button>
-                    <ul className="dropdown-menu modern-dropdown">
-                      <li>
-                        <button 
-                          className="dropdown-item" 
-                          onClick={() => handleNavigation('/admin?section=dashboard')}
-                        >
-                          <i className="fas fa-tachometer-alt me-2"></i>Dashboard
-                        </button>
-                      </li>
-                      <li>
-                        <button 
-                          className="dropdown-item" 
-                          onClick={() => handleNavigation('/admin?section=staff')}
-                        >
-                          <i className="fas fa-users me-2"></i>Staff Management
-                        </button>
-                      </li>
-                      <li>
-                        <button 
-                          className="dropdown-item" 
-                          onClick={() => handleNavigation('/admin?section=menu')}
-                        >
-                          <i className="fas fa-utensils me-2"></i>Menu Management
-                        </button>
-                      </li>
-                      <li>
-                        <button 
-                          className="dropdown-item" 
-                          onClick={() => handleNavigation('/admin?section=orders')}
-                        >
-                          <i className="fas fa-receipt me-2"></i>Recent Orders
-                        </button>
-                      </li>
-                      <li>
-                        <button 
-                          className="dropdown-item" 
-                          onClick={() => handleNavigation('/admin?section=reports')}
-                        >
-                          <i className="fas fa-chart-bar me-2"></i>Reports & Export
-                        </button>
-                      </li>
-                    </ul>
-                  </div>
+                  <>
+                    <div className="nav-tab-dropdown management-dropdown">
+                      <button
+                        className={`nav-tab ${location.pathname === '/admin' && ['staff', 'menu'].includes(new URLSearchParams(location.search).get('section')) ? 'active' : ''}`}
+                        onClick={() => setShowManagementDropdown(!showManagementDropdown)}
+                        aria-expanded={showManagementDropdown}
+                        title="Management Tools"
+                      >
+                        <div className="tab-icon">
+                          <i className="fas fa-cogs"></i>
+                        </div>
+                        <span className="tab-label">Management</span>
+                        <i className={`fas fa-chevron-down ms-1 ${showManagementDropdown ? 'rotate-180' : ''}`}></i>
+                      </button>
+                      {showManagementDropdown && (
+                        <ul className="dropdown-menu modern-dropdown show">
+                          <li>
+                            <button 
+                              className="dropdown-item" 
+                              onClick={() => {
+                                handleNavigation('/admin?section=staff');
+                                setShowManagementDropdown(false);
+                              }}
+                            >
+                              <i className="fas fa-users me-2"></i>Staff Management
+                            </button>
+                          </li>
+                          <li>
+                            <button 
+                              className="dropdown-item" 
+                              onClick={() => {
+                                handleNavigation('/admin?section=menu');
+                                setShowManagementDropdown(false);
+                              }}
+                            >
+                              <i className="fas fa-utensils me-2"></i>Menu Management
+                            </button>
+                          </li>
+                        </ul>
+                      )}
+                    </div>
+
+                    <div className="nav-tab-dropdown analytics-dropdown">
+                      <button
+                        className={`nav-tab ${location.pathname === '/admin' && ['dashboard', 'orders', 'reports'].includes(new URLSearchParams(location.search).get('section')) ? 'active' : ''}`}
+                        onClick={() => setShowAnalyticsDropdown(!showAnalyticsDropdown)}
+                        aria-expanded={showAnalyticsDropdown}
+                        title="Analytics & Reports"
+                      >
+                        <div className="tab-icon">
+                          <i className="fas fa-chart-line"></i>
+                        </div>
+                        <span className="tab-label">Analytics</span>
+                        <i className={`fas fa-chevron-down ms-1 ${showAnalyticsDropdown ? 'rotate-180' : ''}`}></i>
+                      </button>
+                      {showAnalyticsDropdown && (
+                        <ul className="dropdown-menu modern-dropdown show">
+                          <li>
+                            <button 
+                              className="dropdown-item" 
+                              onClick={() => {
+                                handleNavigation('/admin?section=dashboard');
+                                setShowAnalyticsDropdown(false);
+                              }}
+                            >
+                              <i className="fas fa-tachometer-alt me-2"></i>Dashboard
+                            </button>
+                          </li>
+                          <li>
+                            <button 
+                              className="dropdown-item" 
+                              onClick={() => {
+                                handleNavigation('/admin?section=orders');
+                                setShowAnalyticsDropdown(false);
+                              }}
+                            >
+                              <i className="fas fa-list-alt me-2"></i>Order History
+                            </button>
+                          </li>
+                          <li>
+                            <button 
+                              className="dropdown-item" 
+                              onClick={() => {
+                                handleNavigation('/admin?section=reports');
+                                setShowAnalyticsDropdown(false);
+                              }}
+                            >
+                              <i className="fas fa-chart-bar me-2"></i>Reports & Export
+                            </button>
+                          </li>
+                        </ul>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
             </nav>
@@ -300,7 +396,7 @@ const Header = () => {
                             <i className="fas fa-spinner fa-spin"></i>
                           </div>
                         ) : (
-                          quickStats.pendingOrders
+                          quickStats.todaysOrders
                         )}
                       </div>
                     </div>
@@ -381,14 +477,21 @@ const Header = () => {
                         notifications.map(notification => (
                           <div 
                             key={notification.id} 
-                            className={`notification-item ${!notification.read ? 'unread' : ''}`}
+                            className={`notification-item ${!notification.read ? 'unread' : ''} ${getNotificationPriorityClass(notification.priority)}`}
                           >
                             <div className="notification-icon">
                               <i className={getNotificationIcon(notification.type)}></i>
                             </div>
                             <div className="notification-content">
                               <p className="notification-message">{notification.message}</p>
-                              <span className="notification-time">{notification.time}</span>
+                              <div className="notification-meta">
+                                <span className="notification-time">{notification.time}</span>
+                                {notification.priority && notification.priority !== 'normal' && (
+                                  <span className={`notification-priority priority-${notification.priority}`}>
+                                    {notification.priority}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                             {!notification.read && <div className="unread-dot"></div>}
                           </div>
@@ -483,21 +586,24 @@ const Header = () => {
               <i className="fas fa-cash-register"></i>
               <span>POS Dashboard</span>
             </button>
+            
+            {/* Orders accessible to all staff */}
+            <button
+              onClick={() => handleNavigation('/orders')}
+              className={`mobile-nav-item enhanced-touch ${location.pathname === '/orders' ? 'active' : ''}`}
+            >
+              <i className="fas fa-receipt"></i>
+              <span>Order History</span>
+            </button>
+
             {user.role === 'admin' && (
               <>
                 <div className="mobile-nav-section">
                   <div className="mobile-nav-header">
-                    <i className="fas fa-shield-alt"></i>
-                    <span>Admin</span>
+                    <i className="fas fa-cogs"></i>
+                    <span>Management</span>
                   </div>
                   <div className="mobile-nav-items">
-                    <button
-                      onClick={() => handleNavigation('/admin?section=dashboard')}
-                      className={`mobile-nav-subitem ${location.pathname === '/admin' && new URLSearchParams(location.search).get('section') === 'dashboard' ? 'active' : ''}`}
-                    >
-                      <i className="fas fa-tachometer-alt"></i>
-                      <span>Dashboard</span>
-                    </button>
                     <button
                       onClick={() => handleNavigation('/admin?section=staff')}
                       className={`mobile-nav-subitem ${location.pathname === '/admin' && new URLSearchParams(location.search).get('section') === 'staff' ? 'active' : ''}`}
@@ -512,12 +618,28 @@ const Header = () => {
                       <i className="fas fa-utensils"></i>
                       <span>Menu Management</span>
                     </button>
+                  </div>
+                </div>
+
+                <div className="mobile-nav-section">
+                  <div className="mobile-nav-header">
+                    <i className="fas fa-chart-line"></i>
+                    <span>Analytics</span>
+                  </div>
+                  <div className="mobile-nav-items">
+                    <button
+                      onClick={() => handleNavigation('/admin?section=dashboard')}
+                      className={`mobile-nav-subitem ${location.pathname === '/admin' && new URLSearchParams(location.search).get('section') === 'dashboard' ? 'active' : ''}`}
+                    >
+                      <i className="fas fa-tachometer-alt"></i>
+                      <span>Dashboard</span>
+                    </button>
                     <button
                       onClick={() => handleNavigation('/admin?section=orders')}
                       className={`mobile-nav-subitem ${location.pathname === '/admin' && new URLSearchParams(location.search).get('section') === 'orders' ? 'active' : ''}`}
                     >
-                      <i className="fas fa-receipt"></i>
-                      <span>Recent Orders</span>
+                      <i className="fas fa-list-alt"></i>
+                      <span>Order Analytics</span>
                     </button>
                     <button
                       onClick={() => handleNavigation('/admin?section=reports')}
