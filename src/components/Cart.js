@@ -20,77 +20,81 @@ const Cart = ({ onConfirmOrder }) => {
   };
 
   return (
-    <div className="card">
-      <div className="card-body">
-        <div className="flex justify-between items-center mb-4">
-          <h4 className="font-bold text-danger">Cart ({getCartCount()})</h4>
-          <div className="flex gap-2">
-            <button
-              onClick={clearCart}
-              disabled={cartItems.length === 0}
-              className="btn btn-outline-danger btn-sm"
-            >
-              Clear
-            </button>
-            <button
-              onClick={onConfirmOrder}
-              disabled={cartItems.length === 0}
-              className="btn btn-success btn-sm"
-            >
-              Confirm Order
-            </button>
-          </div>
+    <div className="pwa-cart-wrapper">
+      <div className="pwa-cart-header">
+        <h4 className="pwa-cart-title">Cart ({getCartCount()})</h4>
+        <div className="pwa-cart-actions">
+          <button
+            onClick={clearCart}
+            disabled={cartItems.length === 0}
+            className="pwa-cart-btn clear"
+          >
+            <i className="fas fa-trash me-1"></i>
+            Clear
+          </button>
+          <button
+            onClick={onConfirmOrder}
+            disabled={cartItems.length === 0}
+            className="pwa-cart-btn confirm"
+          >
+            <i className="fas fa-check me-1"></i>
+            Confirm
+          </button>
         </div>
+      </div>
 
-        <div className="space-y-2 mb-4">
+        <div className="pwa-cart-items">
           {cartItems.length === 0 ? (
-            <div className="text-center py-4 text-muted">
-              Cart is empty
+            <div className="pwa-cart-empty">
+              <i className="fas fa-shopping-cart fa-2x mb-2"></i>
+              <p>Your cart is empty</p>
+              <span className="text-muted">Add items from the menu to get started</span>
             </div>
           ) : (
             cartItems.map((item) => (
-              <div key={item.id} className="cart-item">
-                <div className="flex-1">
-                  <div className="font-medium">{item.name}</div>
-                  <div className="text-sm text-muted">
+              <div key={item.id} className="pwa-cart-item">
+                <div className="pwa-item-info">
+                  <h6 className="pwa-item-name">{item.name}</h6>
+                  <span className="pwa-item-price">
                     GHS {parseFloat(item.price || 0).toFixed(2)} each
-                  </div>
+                  </span>
                 </div>
                 
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                    className="btn btn-outline-danger btn-sm w-8 h-8 flex items-center justify-center p-0"
-                  >
-                    -
-                  </button>
+                <div className="pwa-item-controls">
+                  <div className="pwa-quantity-controls">
+                    <button
+                      onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+                      className="pwa-qty-btn"
+                    >
+                      <i className="fas fa-minus"></i>
+                    </button>
+                    
+                    <input
+                      type="number"
+                      min="1"
+                      value={item.quantity}
+                      onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value) || 1)}
+                      className="pwa-qty-input"
+                    />
+                    
+                    <button
+                      onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                      className="pwa-qty-btn"
+                    >
+                      <i className="fas fa-plus"></i>
+                    </button>
+                  </div>
                   
-                  <input
-                    type="number"
-                    min="1"
-                    value={item.quantity}
-                    onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value) || 1)}
-                    className="form-control w-16 text-center"
-                  />
-                  
-                  <button
-                    onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                    className="btn btn-outline-danger btn-sm w-8 h-8 flex items-center justify-center p-0"
-                  >
-                    +
-                  </button>
-                  
-                  <div className="text-right min-w-20">
-                    <div className="font-bold">
-                      GHS {(parseFloat(item.price || 0) * item.quantity).toFixed(2)}
-                    </div>
+                  <div className="pwa-item-total">
+                    GHS {(parseFloat(item.price || 0) * item.quantity).toFixed(2)}
                   </div>
                   
                   <button
                     onClick={() => removeFromCart(item.id)}
-                    className="btn btn-outline-danger btn-sm"
+                    className="pwa-remove-btn"
+                    title="Remove item"
                   >
-                    ×
+                    <i className="fas fa-trash"></i>
                   </button>
                 </div>
               </div>
@@ -99,16 +103,15 @@ const Cart = ({ onConfirmOrder }) => {
         </div>
 
         {cartItems.length > 0 && (
-          <div className="border-t pt-4">
-            <div className="flex justify-between items-center">
-              <span className="font-bold">Total:</span>
-              <span className="font-bold text-lg text-success">
+          <div className="pwa-cart-summary">
+            <div className="pwa-cart-total">
+              <span className="pwa-total-label">Order Total:</span>
+              <span className="pwa-total-value">
                 GHS {getCartTotal().toFixed(2)}
               </span>
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 };

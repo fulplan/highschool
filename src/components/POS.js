@@ -135,36 +135,55 @@ const POS = () => {
 
   // Render different sections based on active selection
   const renderPOSSection = () => (
-    <div className="row g-4">
+    <div className="pwa-pos-grid">
       {/* Menu Section */}
-      <div className="col-lg-8">
-        <div className="card pos-menu-card">
-          <div className="card-header bg-danger text-white">
-            <h5 className="mb-0">
-              <i className="fas fa-utensils me-2"></i>
-              Menu Items
-            </h5>
-          </div>
-          <div className="card-body p-0">
-            <div className="pos-menu-container p-3">
-              <MenuGrid menu={menu} />
+      <div className="pwa-menu-section">
+        <div className="pwa-section-header">
+          <div className="pwa-header-content">
+            <div className="pwa-header-icon">
+              <i className="fas fa-utensils"></i>
+            </div>
+            <div className="pwa-header-text">
+              <h5 className="pwa-section-title">Menu Items</h5>
+              <span className="pwa-section-subtitle">{menu.length} items available</span>
             </div>
           </div>
+          <div className="pwa-header-actions">
+            <button
+              onClick={loadMenu}
+              className="pwa-refresh-btn"
+              title="Refresh menu"
+            >
+              <i className="fas fa-sync"></i>
+            </button>
+          </div>
+        </div>
+        <div className="pwa-menu-container">
+          <MenuGrid menu={menu} />
         </div>
       </div>
 
       {/* Cart Section */}
-      <div className="col-lg-4">
-        <div className="card pos-cart-card">
-          <div className="card-header bg-primary text-white">
-            <h5 className="mb-0">
-              <i className="fas fa-shopping-cart me-2"></i>
-              Current Order
-            </h5>
+      <div className="pwa-cart-section">
+        <div className="pwa-section-header">
+          <div className="pwa-header-content">
+            <div className="pwa-header-icon pwa-cart-icon">
+              <i className="fas fa-shopping-cart"></i>
+            </div>
+            <div className="pwa-header-text">
+              <h5 className="pwa-section-title">Current Order</h5>
+              <span className="pwa-section-subtitle">
+                {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'} in cart
+              </span>
+            </div>
           </div>
-          <div className="card-body p-0">
-            <Cart onConfirmOrder={handleConfirmOrder} />
+          <div className="pwa-cart-total">
+            <span className="pwa-total-label">Total</span>
+            <span className="pwa-total-amount">GHS {getCartTotal().toFixed(2)}</span>
           </div>
+        </div>
+        <div className="pwa-cart-container">
+          <Cart onConfirmOrder={handleConfirmOrder} />
         </div>
       </div>
     </div>
@@ -326,66 +345,54 @@ const POS = () => {
   }
 
   return (
-    <div className="admin-layout d-flex fade-in">
-      {/* Sidebar */}
-      <div className="admin-sidebar bg-light border-end d-flex flex-column">
-        <div className="p-3 border-bottom">
-          <h5 className="mb-0 text-danger fw-bold">
-            <i className="fas fa-user me-2"></i>
-            Staff Dashboard
-          </h5>
-          <p className="text-muted mb-0 small">Welcome, {user.username}</p>
-        </div>
-        <nav className="flex-1">
-          <ul className="nav nav-pills flex-column p-3">
-            {sidebarItems.map((item) => (
-              <li key={item.id} className="nav-item mb-1">
-                <button
-                  className={`nav-link w-100 text-start d-flex align-items-center ${
-                    activeSection === item.id ? 'active' : 'text-muted'
-                  }`}
-                  onClick={() => setActiveSection(item.id)}
-                >
-                  <i className={`${item.icon} me-3`}></i>
-                  {item.label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        
-        {/* Quick Actions */}
-        <div className="p-3 border-top">
-          <button
-            onClick={loadMenu}
-            className="btn btn-outline-danger btn-sm w-100"
-          >
-            <i className="fas fa-sync me-1"></i>
-            Refresh Menu
-          </button>
+    <div className="pwa-staff-layout fade-in">
+      {/* PWA Navigation Tabs - Mobile First */}
+      <div className="pwa-nav-tabs">
+        <div className="pwa-nav-container">
+          {sidebarItems.map((item) => (
+            <button
+              key={item.id}
+              className={`pwa-nav-tab ${activeSection === item.id ? 'active' : ''}`}
+              onClick={() => setActiveSection(item.id)}
+            >
+              <div className="pwa-tab-icon">
+                <i className={item.icon}></i>
+              </div>
+              <span className="pwa-tab-label">{item.label}</span>
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="admin-content flex-1">
-        <div className="p-4">
-          {/* Header for current section */}
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <div>
-              <h3 className="mb-1">
-                <i className={`${sidebarItems.find(item => item.id === activeSection)?.icon || 'fas fa-dashboard'} me-2`}></i>
-                {sidebarItems.find(item => item.id === activeSection)?.label || 'Dashboard'}
-              </h3>
-              <p className="text-muted mb-0">
-                {activeSection === 'pos' && 'Create orders and manage transactions'}
-                {activeSection === 'orders' && 'View all recent order history'}
-                {activeSection === 'menu' && 'Browse available menu items'}
-                {activeSection === 'stats' && 'View performance statistics'}
-              </p>
+      {/* PWA Main Content */}
+      <div className="pwa-main-content">
+        {/* PWA Header */}
+        <div className="pwa-main-header">
+          <div className="pwa-header-info">
+            <h2 className="pwa-main-title">
+              <i className={`${sidebarItems.find(item => item.id === activeSection)?.icon || 'fas fa-dashboard'}`}></i>
+              {sidebarItems.find(item => item.id === activeSection)?.label || 'Dashboard'}
+            </h2>
+            <p className="pwa-main-subtitle">
+              {activeSection === 'pos' && 'Create orders and manage transactions'}
+              {activeSection === 'orders' && 'View all recent order history'}
+              {activeSection === 'menu' && 'Browse available menu items'}
+              {activeSection === 'stats' && 'View performance statistics'}
+            </p>
+          </div>
+          <div className="pwa-header-user">
+            <div className="pwa-user-avatar">
+              <i className="fas fa-user"></i>
+            </div>
+            <div className="pwa-user-info">
+              <span className="pwa-user-name">{user.username}</span>
+              <span className="pwa-user-role">Staff Member</span>
             </div>
           </div>
-          
-          {/* Dynamic Content */}
+        </div>
+
+        {/* Dynamic Content Area */}
+        <div className="pwa-content-area">
           {renderContent()}
         </div>
       </div>
