@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../services/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { getOrders, getMenu } from '../services/api';
 
 const Header = () => {
   const { user, logout } = useAuth();
@@ -10,6 +11,59 @@ const Header = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [quickStats, setQuickStats] = useState({
+    todaySales: 0,
+    pendingOrders: 0,
+    lowStockItems: 0,
+    isLoading: true
+  });
+
+  // Fetch quick stats for admin users
+  const fetchQuickStats = async () => {
+    if (!user || user.role !== 'admin') {
+      return;
+    }
+
+    try {
+      setQuickStats(prev => ({ ...prev, isLoading: true }));
+      
+      // Fetch data concurrently using centralized API service
+      const [orders, menu] = await Promise.all([
+        getOrders(),
+        getMenu()
+      ]);
+      
+      // Calculate today's sales - robust date handling
+      const today = new Date().toDateString();
+      const todayOrders = orders.filter(order => {
+        const orderDate = order.timestamp || order.created_at || order.serverReceivedAt;
+        return orderDate && new Date(orderDate).toDateString() === today;
+      });
+      const todaySales = todayOrders.reduce((sum, order) => {
+        const total = parseFloat(order.total || order.amount || 0);
+        return sum + (isNaN(total) ? 0 : total);
+      }, 0);
+      
+      // Calculate low stock items (stock < 10)
+      const lowStockItems = menu.filter(item => {
+        const stock = parseInt(item.stock || 0);
+        return !isNaN(stock) && stock < 10;
+      }).length;
+      
+      // For now, show total orders count as "open orders" since we don't have pending status
+      const totalOrdersToday = todayOrders.length;
+      
+      setQuickStats({
+        todaySales: todaySales,
+        pendingOrders: totalOrdersToday, // Show today's order count as activity indicator
+        lowStockItems: lowStockItems,
+        isLoading: false
+      });
+    } catch (error) {
+      console.error('Failed to fetch quick stats:', error);
+      setQuickStats(prev => ({ ...prev, isLoading: false }));
+    }
+  };
 
   // Mock notification system for UI demonstration (ready for real-time integration)
   useEffect(() => {
@@ -25,6 +79,16 @@ const Header = () => {
     // TODO: Replace with real-time notification subscription
     // Example: WebSocket connection, Server-Sent Events, or polling
   }, []);
+
+  // Fetch quick stats when user changes or component mounts
+  useEffect(() => {
+    if (user && user.role === 'admin') {
+      fetchQuickStats();
+      // Set up periodic refresh every 30 seconds
+      const interval = setInterval(fetchQuickStats, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -70,13 +134,30 @@ const Header = () => {
     }
   };
 
+  // Get current admin section for breadcrumbs
+  const getCurrentSection = () => {
+    if (location.pathname !== '/admin') return null;
+    const params = new URLSearchParams(location.search);
+    const section = params.get('section');
+    
+    const sectionConfig = {
+      dashboard: { name: 'Dashboard', icon: 'fas fa-tachometer-alt' },
+      staff: { name: 'Staff Management', icon: 'fas fa-users' },
+      menu: { name: 'Menu Management', icon: 'fas fa-utensils' },
+      orders: { name: 'Recent Orders', icon: 'fas fa-receipt' },
+      reports: { name: 'Reports & Export', icon: 'fas fa-chart-bar' }
+    };
+    
+    return sectionConfig[section] || { name: 'Dashboard', icon: 'fas fa-tachometer-alt' };
+  };
+
   return (
     <header className="modern-navbar">
       <div className="navbar-container">
         {/* Mobile Hamburger Menu */}
         {user && (
           <button 
-            className="mobile-menu-toggle d-md-none"
+            className="mobile-menu-toggle enhanced-touch d-md-none"
             onClick={toggleMobileMenu}
             aria-label="Toggle mobile menu"
             aria-expanded={isMobileMenuOpen}
@@ -185,8 +266,83 @@ const Header = () => {
               </div>
             </nav>
             
+            {/* Quick Stats for Admin */}
+            {user.role === 'admin' && (
+              <div className="quick-stats d-none d-lg-flex">
+                <div className="stats-container">
+                  <div className="stat-item">
+                    <div className="stat-icon sales">
+                      <i className="fas fa-dollar-sign"></i>
+                    </div>
+                    <div className="stat-content">
+                      <div className="stat-label">Today's Sales</div>
+                      <div className="stat-value">
+                        {quickStats.isLoading ? (
+                          <div className="stat-loading">
+                            <i className="fas fa-spinner fa-spin"></i>
+                          </div>
+                        ) : (
+                          `$${quickStats.todaySales.toFixed(2)}`
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="stat-item">
+                    <div className="stat-icon orders">
+                      <i className="fas fa-receipt"></i>
+                    </div>
+                    <div className="stat-content">
+                      <div className="stat-label">Today's Orders</div>
+                      <div className="stat-value">
+                        {quickStats.isLoading ? (
+                          <div className="stat-loading">
+                            <i className="fas fa-spinner fa-spin"></i>
+                          </div>
+                        ) : (
+                          quickStats.pendingOrders
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {quickStats.lowStockItems > 0 && (
+                    <div className="stat-item warning">
+                      <div className="stat-icon inventory">
+                        <i className="fas fa-exclamation-triangle"></i>
+                      </div>
+                      <div className="stat-content">
+                        <div className="stat-label">Low Stock</div>
+                        <div className="stat-value">{quickStats.lowStockItems} items</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {/* Breadcrumb Navigation for Admin */}
+            {user.role === 'admin' && location.pathname === '/admin' && (
+              <div className="breadcrumb-nav d-none d-md-flex">
+                <div className="breadcrumb-container">
+                  <button 
+                    className="breadcrumb-item home"
+                    onClick={() => handleNavigation('/')}
+                    title="Go to POS"
+                  >
+                    <i className="fas fa-home"></i>
+                  </button>
+                  <i className="fas fa-chevron-right breadcrumb-separator"></i>
+                  <span className="breadcrumb-item current">
+                    <i className={getCurrentSection()?.icon}></i>
+                    <span className="breadcrumb-label">{getCurrentSection()?.name}</span>
+                  </span>
+                </div>
+              </div>
+            )}
+            
             {/* Right Side Actions */}
-            <div className="navbar-actions">
+            <div className="navbar-actions enhanced-touch">
               {/* Notifications */}
               <div className="notification-wrapper">
                 <button
@@ -322,7 +478,7 @@ const Header = () => {
           <nav className="mobile-nav-list">
             <button
               onClick={() => handleNavigation('/')}
-              className={`mobile-nav-item ${location.pathname === '/' ? 'active' : ''}`}
+              className={`mobile-nav-item enhanced-touch ${location.pathname === '/' ? 'active' : ''}`}
             >
               <i className="fas fa-cash-register"></i>
               <span>POS Dashboard</span>
