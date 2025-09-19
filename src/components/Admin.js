@@ -1,17 +1,35 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { getStaff, addStaff, getMenu, addMenuItem, updateMenuStock, getOrders } from '../services/api';
 import { useAuth } from '../services/AuthContext';
 
 const Admin = () => {
   const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [staff, setStaff] = useState([]);
   const [menu, setMenu] = useState([]);
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeSection, setActiveSection] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+
+  // Get active section from URL query parameters
+  const getActiveSection = () => {
+    const urlParams = new URLSearchParams(location.search);
+    const section = urlParams.get('section');
+    return section && ['dashboard', 'staff', 'menu', 'orders', 'reports'].includes(section) 
+      ? section 
+      : 'dashboard';
+  };
+
+  const activeSection = getActiveSection();
+
+  // Function to navigate to different admin sections
+  const navigateToSection = (section) => {
+    navigate(`/admin?section=${section}`);
+  };
 
   // Form states
   const [newStaff, setNewStaff] = useState({ username: '', password: '', role: 'staff' });
@@ -190,15 +208,6 @@ const Admin = () => {
       staffSales
     };
   }, [orders]);
-
-  // Sidebar navigation items
-  const sidebarItems = [
-    { id: 'dashboard', icon: 'fas fa-tachometer-alt', label: 'Dashboard' },
-    { id: 'staff', icon: 'fas fa-users', label: 'Staff Management' },
-    { id: 'menu', icon: 'fas fa-utensils', label: 'Menu Management' },
-    { id: 'orders', icon: 'fas fa-receipt', label: 'Recent Orders' },
-    { id: 'reports', icon: 'fas fa-chart-bar', label: 'Reports & Export' }
-  ];
 
   const renderDashboard = () => (
     <div className="dashboard-container">
@@ -607,12 +616,12 @@ const Admin = () => {
                 <small className="text-muted">Staff Members</small>
               </div>
               <div className="col-6">
-                <div className="h4 text-info mb-0">{menu.filter(item => item.stock <= 5).length}</div>
-                <small className="text-muted">Low Stock Items</small>
+                <div className="h4 text-success mb-0">{orders.length}</div>
+                <small className="text-muted">Total Orders</small>
               </div>
               <div className="col-6">
-                <div className="h4 text-success mb-0">{salesStats.todayOrders}</div>
-                <small className="text-muted">Today's Orders</small>
+                <div className="h4 text-info mb-0">GHS {salesStats.totalSales.toFixed(2)}</div>
+                <small className="text-muted">Total Revenue</small>
               </div>
             </div>
           </div>
@@ -661,148 +670,28 @@ const Admin = () => {
   }
 
   return (
-    <div className={`admin-layout ${isMobile ? 'mobile' : ''}`}>
-      {/* Mobile Header */}
-      {isMobile && (
-        <div className="mobile-header">
-          <div className="mobile-header-content">
-            <button 
-              className="mobile-menu-toggle"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              aria-label="Toggle navigation menu"
-            >
-              <i className={`fas ${isMobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
-            </button>
-            <h2 className="mobile-page-title">
-              {sidebarItems.find(item => item.id === activeSection)?.label || 'Dashboard'}
-            </h2>
-            <div className="mobile-user-info">
-              <div className="mobile-user-avatar">
-                <i className="fas fa-user"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Mobile Menu Overlay */}
-      {isMobile && isMobileMenuOpen && (
-        <div className="mobile-menu-overlay" onClick={() => setIsMobileMenuOpen(false)}>
-          <div className="mobile-menu" onClick={(e) => e.stopPropagation()}>
-            <div className="mobile-menu-header">
-              <div className="mobile-brand">
-                <i className="fas fa-shield-alt"></i>
-                <span>Admin Panel</span>
-              </div>
-              <button 
-                className="mobile-menu-close"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            <nav className="mobile-nav">
-              {sidebarItems.map((item) => (
-                <button
-                  key={item.id}
-                  className={`mobile-nav-item ${activeSection === item.id ? 'active' : ''}`}
-                  onClick={() => setActiveSection(item.id)}
-                >
-                  <div className="mobile-nav-icon">
-                    <i className={item.icon}></i>
-                  </div>
-                  <span className="mobile-nav-label">{item.label}</span>
-                  <i className="fas fa-chevron-right mobile-nav-arrow"></i>
-                </button>
-              ))}
-            </nav>
-          </div>
-        </div>
-      )}
-
-      {/* Desktop Sidebar */}
-      <div className={`admin-sidebar ${isMobile ? 'mobile-hidden' : ''}`}>
-        <div className="sidebar-header">
-          <div className="sidebar-brand">
-            <i className="fas fa-shield-alt me-2"></i>
-            <span className="brand-text">Admin Panel</span>
-          </div>
-        </div>
-        <nav className="sidebar-nav">
-          {sidebarItems.map((item) => (
-            <button
-              key={item.id}
-              className={`nav-item ${activeSection === item.id ? 'active' : ''}`}
-              onClick={() => setActiveSection(item.id)}
-            >
-              <div className="nav-icon">
-                <i className={item.icon}></i>
-              </div>
-              <span className="nav-label">{item.label}</span>
-            </button>
-          ))}
-        </nav>
-      </div>
-
-      {/* Main Content Area */}
-      <div className="admin-content">
-        {/* Desktop Header */}
-        {!isMobile && (
-          <div className="content-header">
-            <h3 className="page-title">
-              {sidebarItems.find(item => item.id === activeSection)?.label || 'Dashboard'}
-            </h3>
+    <div className="admin-container">
+      {/* Full-width admin content */}
+      <div className="admin-content-wrapper">
+        {/* Success/Error Messages */}
+        {successMessage && (
+          <div className="alert alert-success alert-dismissible fade show mb-4" role="alert">
+            <i className="fas fa-check-circle me-2"></i>
+            {successMessage}
+            <button type="button" className="btn-close" onClick={() => setSuccessMessage('')}></button>
           </div>
         )}
         
-        <div className="content-body">
-          {/* Success/Error Messages */}
-          {successMessage && (
-            <div className="alert alert-success alert-dismissible fade show mb-4" role="alert">
-              <i className="fas fa-check-circle me-2"></i>
-              {successMessage}
-              <button type="button" className="btn-close" onClick={() => setSuccessMessage('')}></button>
-            </div>
-          )}
-          
-          {error && (
-            <div className="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-              <i className="fas fa-exclamation-circle me-2"></i>
-              {error}
-              <button type="button" className="btn-close" onClick={() => setError('')}></button>
-            </div>
-          )}
-          
-          {renderContent()}
-        </div>
+        {error && (
+          <div className="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+            <i className="fas fa-exclamation-circle me-2"></i>
+            {error}
+            <button type="button" className="btn-close" onClick={() => setError('')}></button>
+          </div>
+        )}
+        
+        {renderContent()}
       </div>
-
-      {/* Mobile Bottom Navigation */}
-      {isMobile && (
-        <div className="mobile-bottom-nav">
-          {sidebarItems.slice(0, 4).map((item) => (
-            <button
-              key={item.id}
-              className={`bottom-nav-item ${activeSection === item.id ? 'active' : ''}`}
-              onClick={() => setActiveSection(item.id)}
-            >
-              <div className="bottom-nav-icon">
-                <i className={item.icon}></i>
-              </div>
-              <span className="bottom-nav-label">{item.label}</span>
-            </button>
-          ))}
-          <button
-            className="bottom-nav-item"
-            onClick={() => setIsMobileMenuOpen(true)}
-          >
-            <div className="bottom-nav-icon">
-              <i className="fas fa-ellipsis-h"></i>
-            </div>
-            <span className="bottom-nav-label">More</span>
-          </button>
-        </div>
-      )}
     </div>
   );
 };

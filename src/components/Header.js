@@ -115,26 +115,72 @@ const Header = () => {
                 <button
                   onClick={() => handleNavigation('/')}
                   className={`nav-tab ${location.pathname === '/' ? 'active' : ''}`}
-                  title="Staff Dashboard"
+                  title="POS Dashboard"
                   aria-current={location.pathname === '/' ? 'page' : undefined}
                 >
                   <div className="tab-icon">
                     <i className="fas fa-cash-register"></i>
                   </div>
-                  <span className="tab-label">Staff</span>
+                  <span className="tab-label">POS</span>
                 </button>
                 {user.role === 'admin' && (
-                  <button
-                    onClick={() => handleNavigation('/admin')}
-                    className={`nav-tab ${location.pathname === '/admin' ? 'active' : ''}`}
-                    title="Admin Dashboard"
-                    aria-current={location.pathname === '/admin' ? 'page' : undefined}
-                  >
-                    <div className="tab-icon">
-                      <i className="fas fa-shield-alt"></i>
-                    </div>
-                    <span className="tab-label">Admin</span>
-                  </button>
+                  <div className="nav-tab-dropdown">
+                    <button
+                      className={`nav-tab ${location.pathname === '/admin' ? 'active' : ''}`}
+                      data-bs-toggle="dropdown" 
+                      aria-expanded="false"
+                      title="Admin Dashboard"
+                      aria-current={location.pathname === '/admin' ? 'page' : undefined}
+                    >
+                      <div className="tab-icon">
+                        <i className="fas fa-shield-alt"></i>
+                      </div>
+                      <span className="tab-label">Admin</span>
+                      <i className="fas fa-chevron-down ms-1"></i>
+                    </button>
+                    <ul className="dropdown-menu modern-dropdown">
+                      <li>
+                        <button 
+                          className="dropdown-item" 
+                          onClick={() => handleNavigation('/admin?section=dashboard')}
+                        >
+                          <i className="fas fa-tachometer-alt me-2"></i>Dashboard
+                        </button>
+                      </li>
+                      <li>
+                        <button 
+                          className="dropdown-item" 
+                          onClick={() => handleNavigation('/admin?section=staff')}
+                        >
+                          <i className="fas fa-users me-2"></i>Staff Management
+                        </button>
+                      </li>
+                      <li>
+                        <button 
+                          className="dropdown-item" 
+                          onClick={() => handleNavigation('/admin?section=menu')}
+                        >
+                          <i className="fas fa-utensils me-2"></i>Menu Management
+                        </button>
+                      </li>
+                      <li>
+                        <button 
+                          className="dropdown-item" 
+                          onClick={() => handleNavigation('/admin?section=orders')}
+                        >
+                          <i className="fas fa-receipt me-2"></i>Recent Orders
+                        </button>
+                      </li>
+                      <li>
+                        <button 
+                          className="dropdown-item" 
+                          onClick={() => handleNavigation('/admin?section=reports')}
+                        >
+                          <i className="fas fa-chart-bar me-2"></i>Reports & Export
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
                 )}
               </div>
             </nav>
@@ -279,16 +325,54 @@ const Header = () => {
               className={`mobile-nav-item ${location.pathname === '/' ? 'active' : ''}`}
             >
               <i className="fas fa-cash-register"></i>
-              <span>Staff Dashboard</span>
+              <span>POS Dashboard</span>
             </button>
             {user.role === 'admin' && (
-              <button
-                onClick={() => handleNavigation('/admin')}
-                className={`mobile-nav-item ${location.pathname === '/admin' ? 'active' : ''}`}
-              >
-                <i className="fas fa-shield-alt"></i>
-                <span>Admin Dashboard</span>
-              </button>
+              <>
+                <div className="mobile-nav-section">
+                  <div className="mobile-nav-header">
+                    <i className="fas fa-shield-alt"></i>
+                    <span>Admin</span>
+                  </div>
+                  <div className="mobile-nav-items">
+                    <button
+                      onClick={() => handleNavigation('/admin?section=dashboard')}
+                      className={`mobile-nav-subitem ${location.pathname === '/admin' && new URLSearchParams(location.search).get('section') === 'dashboard' ? 'active' : ''}`}
+                    >
+                      <i className="fas fa-tachometer-alt"></i>
+                      <span>Dashboard</span>
+                    </button>
+                    <button
+                      onClick={() => handleNavigation('/admin?section=staff')}
+                      className={`mobile-nav-subitem ${location.pathname === '/admin' && new URLSearchParams(location.search).get('section') === 'staff' ? 'active' : ''}`}
+                    >
+                      <i className="fas fa-users"></i>
+                      <span>Staff Management</span>
+                    </button>
+                    <button
+                      onClick={() => handleNavigation('/admin?section=menu')}
+                      className={`mobile-nav-subitem ${location.pathname === '/admin' && new URLSearchParams(location.search).get('section') === 'menu' ? 'active' : ''}`}
+                    >
+                      <i className="fas fa-utensils"></i>
+                      <span>Menu Management</span>
+                    </button>
+                    <button
+                      onClick={() => handleNavigation('/admin?section=orders')}
+                      className={`mobile-nav-subitem ${location.pathname === '/admin' && new URLSearchParams(location.search).get('section') === 'orders' ? 'active' : ''}`}
+                    >
+                      <i className="fas fa-receipt"></i>
+                      <span>Recent Orders</span>
+                    </button>
+                    <button
+                      onClick={() => handleNavigation('/admin?section=reports')}
+                      className={`mobile-nav-subitem ${location.pathname === '/admin' && new URLSearchParams(location.search).get('section') === 'reports' ? 'active' : ''}`}
+                    >
+                      <i className="fas fa-chart-bar"></i>
+                      <span>Reports & Export</span>
+                    </button>
+                  </div>
+                </div>
+              </>
             )}
             <div className="mobile-nav-divider"></div>
             <button className="mobile-nav-item logout" onClick={handleLogout}>
