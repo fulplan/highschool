@@ -11,12 +11,7 @@ Files:
    - icon-512.png
    - logo.png
 
-How to run:
-1. Place files in a folder and create an 'icons' folder with the three PNGs.
-2. For best PWA behavior, serve via a local server:
-   - Python: python -m http.server 8000
-   - Or: npx http-server
-3. Open http://localhost:8000 in your browser.
+
 
 Login:
 - Admin: admin / admin123
